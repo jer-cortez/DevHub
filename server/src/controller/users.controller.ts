@@ -28,7 +28,7 @@ export const UserController = {
             const newUser = UserServices.creatUser(newUserBody)
             res.status(200).json({ data: newUser })
         } catch(error: any) { 
-            res.status(500).json({ error: "Failed to fetch User"})
+            res.status(500).json({ error: "Failed to create user"})
         }
     },
 }

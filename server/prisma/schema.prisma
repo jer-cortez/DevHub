@@ -17,3 +17,22 @@ model User {
 
   @@map("users")
 }
+
+/// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
+model pull_request {
+  id               String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  github_pr_id     BigInt    @unique
+  github_pr_number Int
+  repo_id          String    @db.Uuid
+  author_id        String    @db.Uuid
+  title            String    @db.VarChar
+  body             String?
+  status           String    @default("open") @db.VarChar
+  base_branch      String    @db.VarChar
+  head_branch      String    @db.VarChar
+  github_url       String    @db.VarChar
+  last_synced_at   DateTime? @db.Timestamp(6)
+  created_at       DateTime  @default(now()) @db.Timestamp(6)
+  closed_at        DateTime? @db.Timestamp(6)
+  merged_at        DateTime? @db.Timestamp(6)
+}
