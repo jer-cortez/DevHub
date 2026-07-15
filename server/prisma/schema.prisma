@@ -36,3 +36,109 @@ model pull_request {
   closed_at        DateTime? @db.Timestamp(6)
   merged_at        DateTime? @db.Timestamp(6)
 }
+
+/// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
+model drawing_board_collaborators {
+  id         String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  board_id   String   @db.Uuid
+  user_id    String   @db.Uuid
+  permission String   @db.VarChar
+  added_at   DateTime @db.Timestamptz(6)
+}
+
+/// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
+model drawing_boards {
+  id         String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  repo_id    String   @db.Uuid
+  created_by String   @db.Uuid
+  type       String   @db.VarChar
+  title      String   @db.VarChar
+  nodes      Json
+  edges      Json
+  updated_at DateTime @db.Timestamp(6)
+  created_at DateTime @default(now()) @db.Timestamptz(6)
+}
+
+/// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
+model notifications {
+  id         String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  user_id    String   @db.Uuid
+  type       String   @db.VarChar
+  pr_id      String   @db.Uuid
+  board_id   String   @db.Uuid
+  is_read    Boolean
+  created_at DateTime @default(now()) @db.Timestamptz(6)
+}
+
+/// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
+model organization_members {
+  id        String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  user_id   String   @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  org_id    String   @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  joined_at DateTime @db.Timestamp(6)
+}
+
+/// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
+model organizations {
+  id            String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  github_org_id BigInt
+  name          String   @db.VarChar
+  avatar_url    String   @db.VarChar
+  created_at    DateTime @db.Timestamp(6)
+}
+
+/// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
+model pull_request_reviewers {
+  id          String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  pr_id       String    @db.Uuid
+  user_id     String    @db.Uuid
+  status      String    @db.VarChar
+  reviewed_at DateTime? @db.Timestamptz(6)
+  assigned_at DateTime  @db.Timestamp(6)
+}
+
+/// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
+model repo_followers {
+  id          BigInt   @id @default(autoincrement())
+  user_id     String   @db.Uuid
+  repo_id     String   @db.Uuid
+  followed_at DateTime @default(now()) @db.Timestamp(6)
+}
+
+/// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
+model repositories {
+  id             String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  github_repo_id BigInt
+  org_id         String   @db.Uuid
+  name           String   @db.VarChar
+  description    String   @db.VarChar
+  is_private     Boolean
+  default_branch String   @db.VarChar
+  last_synced_at DateTime @db.Timestamp(6)
+  created_at     DateTime @default(now()) @db.Timestamptz(6)
+}
+
+/// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
+model review_comments {
+  id                String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  github_comment_id BigInt
+  review_id         String   @db.Uuid
+  pr_id             String   @db.Uuid
+  author_id         String   @db.Uuid
+  body              String
+  file_path         String   @db.VarChar
+  line_number       Int
+  is_resolved       Boolean
+  created_at        DateTime @default(now()) @db.Timestamp(6)
+}
+
+/// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
+model reviews {
+  id               String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  github_review_id BigInt
+  pr_id            String   @db.Uuid
+  reviewer_id      String   @db.Uuid
+  decision         String   @db.VarChar
+  body             String?
+  submitted_at     DateTime @db.Timestamptz(6)
+}
