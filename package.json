@@ -1,5 +1,13 @@
 {
+  "name": "github-extension",
+  "scripts": {
+    "dev": "concurrently --names \"server,client\" --prefix-colors \"cyan,magenta\" \"npm run dev --prefix server\" \"npm run dev --prefix client\"",
+    "build": "concurrently \"npm run build --prefix server\" \"npm run build --prefix client\""
+  },
   "dependencies": {
     "@supabase/server": "^1.3.0"
+  },
+  "devDependencies": {
+    "concurrently": "^10.0.3"
   }
 }
