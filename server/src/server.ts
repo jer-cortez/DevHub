@@ -1,14 +1,43 @@
 import express from 'express';
 import cors from 'cors';
+import { usersRouter } from './gateway/routes/users.routes';
+import { pullRequestRouter } from './gateway/routes/pullRequest.routes';
+import { repositoriesRouter } from './gateway/routes/repositories.routes';
+import { organizationsRouter } from './gateway/routes/organizations.routes';
+import { orgMembersRouter } from './gateway/routes/organizationMembers.routes';
+import { repoFollowersRouter } from './gateway/routes/repoFollowers.routes';
+import { reviewsRouter } from './gateway/routes/reviews.routes';
+import { reviewCommentsRouter } from './gateway/routes/reviewComments.routes';
+import { prReviewersRouter } from './gateway/routes/pullRequestReviewers.routes';
+import { drawingBoardsRouter } from './gateway/routes/drawingBoards.routes';
+import { boardCollaboratorsRouter } from './gateway/routes/drawingBoardCollaborators.routes';
+import { notificationsRouter } from './gateway/routes/notifications.routes';
+
+// Handle BigInt serialization for repo_followers
+(BigInt.prototype as any).toJSON = function () { return this.toString(); };
 
 const app = express();
 const PORT = 8080;
 
 app.use(cors());
+app.use(express.json());
 
 app.get('/api/home', (req, res) => {
   res.json({ message: 'Hello World!', pet: ['dog', 'cat', 'bird'] });
 });
+
+app.use('/api/users', usersRouter);
+app.use('/api/pull-requests', pullRequestRouter);
+app.use('/api/repositories', repositoriesRouter);
+app.use('/api/organizations', organizationsRouter);
+app.use('/api/org-members', orgMembersRouter);
+app.use('/api/repo-followers', repoFollowersRouter);
+app.use('/api/reviews', reviewsRouter);
+app.use('/api/review-comments', reviewCommentsRouter);
+app.use('/api/pr-reviewers', prReviewersRouter);
+app.use('/api/drawing-boards', drawingBoardsRouter);
+app.use('/api/board-collaborators', boardCollaboratorsRouter);
+app.use('/api/notifications', notificationsRouter);
 
 app.listen(PORT, () => {
   console.log(`Server started on port ${PORT}`);

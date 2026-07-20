@@ -7,3 +7,11 @@ export const githubRateLimiter = async (
 ) : Promise<void> =>  { 
     return 
 }
+
+export const anrothpicRateLimiter = async (
+    req : Request, 
+    res : Response, 
+    next : NextFunction
+) : Promise<void> => { 
+    return 
+}

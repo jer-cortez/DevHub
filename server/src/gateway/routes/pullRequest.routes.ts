@@ -1,8 +1,11 @@
 import express from 'express';
-import { PullRequestContoller } from '../../controller/pullRequest.controller';
+import { PullRequestController } from '../../controller/pullRequest.controller';
 
-const router = express.Router(); 
+const router = express.Router();
 
-router.get("/allPrs", PullRequestContoller.findAll);
-router.get("/prById/:id", PullRequestContoller.findById);
-router.get("/createPr", PullRequestContoller.create);
+router.get('/all', PullRequestController.findAll);
+router.get('/:id', PullRequestController.findById);
+router.post('/create', PullRequestController.create);
+router.delete('/:id', PullRequestController.delete);
+
+export { router as pullRequestRouter };
