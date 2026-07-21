@@ -1,9 +1,27 @@
 "use client";
+import { createClient } from "@/lib/supabase/client";
 
 export default function GitHubLoginButton() {
+  // Github OAuth login handler
   const handleLogin = () => {
-    // TODO: trigger GitHub OAuth flow
+    const supabase = createClient();
+    supabase.auth.signInWithOAuth({
+      provider: "github",
+      options: {
+        redirectTo: `${window.location.origin}/auth/callback`,
+      },
+    });
   };
+  // Email OAuth login Handler
+  // const handleEmailLogin = () => { 
+  //   const supbase = createClient(); 
+  //   supbase.auth.signInWithOtp({
+  //     email: "email:@example.com",
+  //     options: {
+  //       emailRedirectTo: `${window.location.origin}/auth/callback`,
+  //     },
+  //   });
+  // }
 
   return (
     <button
