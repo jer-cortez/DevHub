@@ -12,6 +12,7 @@ import { prReviewersRouter } from './gateway/routes/pullRequestReviewers.routes'
 import { drawingBoardsRouter } from './gateway/routes/drawingBoards.routes';
 import { boardCollaboratorsRouter } from './gateway/routes/drawingBoardCollaborators.routes';
 import { notificationsRouter } from './gateway/routes/notifications.routes';
+import { AuthMiddleware } from './gateway/middleware/auth.middleware';
 
 // Handle BigInt serialization for repo_followers
 (BigInt.prototype as any).toJSON = function () { return this.toString(); };
@@ -25,6 +26,8 @@ app.use(express.json());
 app.get('/api/home', (req, res) => {
   res.json({ message: 'Hello World!', pet: ['dog', 'cat', 'bird'] });
 });
+
+app.use(AuthMiddleware);
 
 app.use('/api/users', usersRouter);
 app.use('/api/pull-requests', pullRequestRouter);

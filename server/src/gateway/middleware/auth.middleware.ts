@@ -1,27 +1,44 @@
 import type { Request, Response, NextFunction } from "express";
 import { supabaseAdmin } from "../../config/supabaseClient";
+import { AuthHandler } from "../../services/auth.services";
 
 export const AuthMiddleware = async (
-    req: Request, 
-    res: Response, 
+    req: Request,
+    res: Response,
     next: NextFunction
- ) : Promise<void> => { 
+ ) : Promise<void> => {
 
     const token = req.headers.authorization?.replace("Bearer ", "");
 
-    if (!token) { 
+    if (!token) {
         res.status(401).json({ error : "No Token Provided"});
         return
     }
 
     const { data , error } = await supabaseAdmin.auth.getUser(token);
 
-    if ( error || !data.user) { 
+    if ( error || !data.user) {
         console.error('Error verifying token:', error);
         res.status(401).json({ error : "Invaild or expired token" });
         return
     }
-    // Potential add req.user ... to attach user to request for downstream use
+
+    const user = data.user;
+    const username = user.user_metadata.user_name;
+    const isMember = await AuthHandler.verifyOrgMembership(username, token);
+
+    if (!isMember) {
+        res.status(403).json({ error: "You are not a member of this organization" });
+        return
+    }
+
+    req.user = {
+        id: user.id,
+        username,
+        email: user.email,
+        avatar_url: user.user_metadata.avatar_url,
+    };
+
     next()
 
 }
