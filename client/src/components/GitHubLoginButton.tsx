@@ -5,6 +5,8 @@ export default function GitHubLoginButton() {
   // Github OAuth login handler
   const handleLogin = () => {
     const supabase = createClient();
+
+    // Note that supabase signInWithOAuth auto generates a access token and holds it in the browser's local storage (seesion). 
     supabase.auth.signInWithOAuth({
       provider: "github",
       options: {
@@ -12,16 +14,6 @@ export default function GitHubLoginButton() {
       },
     });
   };
-  // Email OAuth login Handler
-  // const handleEmailLogin = () => { 
-  //   const supbase = createClient(); 
-  //   supbase.auth.signInWithOtp({
-  //     email: "email:@example.com",
-  //     options: {
-  //       emailRedirectTo: `${window.location.origin}/auth/callback`,
-  //     },
-  //   });
-  // }
 
   return (
     <button

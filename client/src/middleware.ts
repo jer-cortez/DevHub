@@ -1,6 +1,8 @@
 import { createServerClient } from '@supabase/ssr';
 import { NextRequest, NextResponse } from 'next/server';
 
+const PUBLIC_PATHS = ['/', '/auth/callback'];
+
 export async function middleware(request: NextRequest) {
   let response = NextResponse.next({ request });
   const supabase = createServerClient(
@@ -17,7 +19,13 @@ export async function middleware(request: NextRequest) {
       },
     }
   );
-  await supabase.auth.getUser(); // refreshes session
+
+  const { data: { user } } = await supabase.auth.getUser(); // refreshes session
+
+  if (!user && !PUBLIC_PATHS.includes(request.nextUrl.pathname)) {
+    return NextResponse.redirect(new URL('/', request.url));
+  }
+
   return response;
 }
 
