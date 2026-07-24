@@ -6,6 +6,7 @@ declare global {
         username: string;
         email: string | undefined;
         avatar_url: string;
+        github_id: number;
       };
     }
   }

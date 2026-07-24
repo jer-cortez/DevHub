@@ -37,6 +37,7 @@ export const AuthMiddleware = async (
         username,
         email: user.email,
         avatar_url: user.user_metadata.avatar_url,
+        github_id: Number(user.user_metadata.provider_id),
     };
 
     next()

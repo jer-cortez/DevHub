@@ -14,4 +14,20 @@ export const UserSB = {
   async delete(id: string): Promise<User> {
     return prisma.user.delete({ where: { id } });
   },
+  async upsertByGithubId(data: {
+    github_id: number;
+    username: string;
+    avatar_url?: string;
+    email?: string;
+  }): Promise<User> {
+    return prisma.user.upsert({
+      where: { github_id: data.github_id },
+      update: {
+        username: data.username,
+        avatar_url: data.avatar_url,
+        email: data.email,
+      },
+      create: data,
+    });
+  },
 };

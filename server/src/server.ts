@@ -12,6 +12,7 @@ import { prReviewersRouter } from './gateway/routes/pullRequestReviewers.routes'
 import { drawingBoardsRouter } from './gateway/routes/drawingBoards.routes';
 import { boardCollaboratorsRouter } from './gateway/routes/drawingBoardCollaborators.routes';
 import { notificationsRouter } from './gateway/routes/notifications.routes';
+import { authRouter } from './gateway/routes/auth.routes';
 import { AuthMiddleware } from './gateway/middleware/auth.middleware';
 
 // Handle BigInt serialization for repo_followers
@@ -29,6 +30,7 @@ app.get('/api/home', (req, res) => {
 
 app.use(AuthMiddleware);
 
+app.use('/api/auth', authRouter);
 app.use('/api/users', usersRouter);
 app.use('/api/pull-requests', pullRequestRouter);
 app.use('/api/repositories', repositoriesRouter);

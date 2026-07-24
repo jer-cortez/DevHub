@@ -18,4 +18,12 @@ export const UserServices = {
   async delete(id: string): Promise<User> {
     return UserSB.delete(id);
   },
+  async upsertByGithubId(data: {
+    github_id: number;
+    username: string;
+    avatar_url?: string;
+    email?: string;
+  }): Promise<User> {
+    return UserSB.upsertByGithubId(data);
+  },
 };
