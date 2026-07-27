@@ -1,5 +1,9 @@
 import { RepositoriesSB } from '../supabase/repositoriesSB';
+import { OrganizationsServices } from './organizations.services';
+import { octokit } from '../lib/github';
 import type { repositories, Prisma } from '../generated/prisma/client';
+
+const ORG_NAME = process.env.GITHUB_ORG_NAME!;
 
 export const RepositoriesServices = {
   async findAll(): Promise<repositories[]> {
@@ -15,5 +19,39 @@ export const RepositoriesServices = {
   },
   async delete(id: string): Promise<repositories> {
     return RepositoriesSB.delete(id);
+  },
+  async upsertByGithubRepoId(data: {
+    github_repo_id: bigint;
+    org_id: string;
+    name: string;
+    description: string;
+    is_private: boolean;
+    default_branch: string;
+  }): Promise<repositories> {
+    return RepositoriesSB.upsertByGithubRepoId(data);
+  },
+  async syncFromGithub(): Promise<repositories[]> {
+    const { data: githubOrg } = await octokit.rest.orgs.get({ org: ORG_NAME });
+
+    const org = await OrganizationsServices.upsertByGithubOrgId({
+      github_org_id: BigInt(githubOrg.id),
+      name: githubOrg.login,
+      avatar_url: githubOrg.avatar_url,
+    });
+
+    const { data: githubRepos } = await octokit.rest.repos.listForOrg({ org: ORG_NAME });
+
+    return Promise.all(
+      githubRepos.map((repo) =>
+        RepositoriesSB.upsertByGithubRepoId({
+          github_repo_id: BigInt(repo.id),
+          org_id: org.id,
+          name: repo.name,
+          description: repo.description ?? '',
+          is_private: repo.private,
+          default_branch: repo.default_branch ?? 'main',
+        })
+      )
+    );
   },
 };

@@ -36,4 +36,13 @@ export const RepositoriesController = {
       res.status(500).json({ error: 'Failed to delete repository' });
     }
   },
+  async sync(_req: Request, res: Response) {
+    try {
+      const repos = await RepositoriesServices.syncFromGithub();
+      res.status(200).json({ data: repos });
+    } catch (error) {
+      console.error('Failed to sync repositories from GitHub:', error);
+      res.status(500).json({ error: 'Failed to sync repositories' });
+    }
+  },
 };

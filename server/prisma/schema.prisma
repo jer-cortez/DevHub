@@ -81,7 +81,7 @@ model organization_members {
 /// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
 model organizations {
   id            String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  github_org_id BigInt
+  github_org_id BigInt   @unique
   name          String   @db.VarChar
   avatar_url    String   @db.VarChar
   created_at    DateTime @db.Timestamp(6)
@@ -108,7 +108,7 @@ model repo_followers {
 /// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
 model repositories {
   id             String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  github_repo_id BigInt
+  github_repo_id BigInt   @unique
   org_id         String   @db.Uuid
   name           String   @db.VarChar
   description    String   @db.VarChar

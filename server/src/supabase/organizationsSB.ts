@@ -14,4 +14,15 @@ export const OrganizationsSB = {
   async delete(id: string): Promise<organizations> {
     return prisma.organizations.delete({ where: { id } });
   },
+  async upsertByGithubOrgId(data: {
+    github_org_id: bigint;
+    name: string;
+    avatar_url: string;
+  }): Promise<organizations> {
+    return prisma.organizations.upsert({
+      where: { github_org_id: data.github_org_id },
+      update: { name: data.name, avatar_url: data.avatar_url },
+      create: { ...data, created_at: new Date() },
+    });
+  },
 };

@@ -16,4 +16,11 @@ export const OrganizationsServices = {
   async delete(id: string): Promise<organizations> {
     return OrganizationsSB.delete(id);
   },
+  async upsertByGithubOrgId(data: {
+    github_org_id: bigint;
+    name: string;
+    avatar_url: string;
+  }): Promise<organizations> {
+    return OrganizationsSB.upsertByGithubOrgId(data);
+  },
 };

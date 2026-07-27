@@ -14,4 +14,19 @@ export const RepositoriesSB = {
   async delete(id: string): Promise<repositories> {
     return prisma.repositories.delete({ where: { id } });
   },
+  async upsertByGithubRepoId(data: {
+    github_repo_id: bigint;
+    org_id: string;
+    name: string;
+    description: string;
+    is_private: boolean;
+    default_branch: string;
+  }): Promise<repositories> {
+    const now = new Date();
+    return prisma.repositories.upsert({
+      where: { github_repo_id: data.github_repo_id },
+      update: { ...data, last_synced_at: now },
+      create: { ...data, last_synced_at: now },
+    });
+  },
 };
