@@ -36,4 +36,23 @@ export const PullRequestController = {
       res.status(500).json({ error: 'Failed to delete pull request' });
     }
   },
+  async findByRepo(req: Request, res: Response) {
+    try {
+      const repoId = req.params.repoId as string;
+      const prs = await PullRequestServices.findByRepoId(repoId);
+      res.status(200).json({ data: prs });
+    } catch (error) {
+      res.status(500).json({ error: 'Failed to fetch pull requests for repository' });
+    }
+  },
+  async sync(req: Request, res: Response) {
+    try {
+      const repoId = req.params.repoId as string;
+      const prs = await PullRequestServices.syncFromGithub(repoId);
+      res.status(200).json({ data: prs });
+    } catch (error) {
+      console.error('Failed to sync pull requests from GitHub:', error);
+      res.status(500).json({ error: 'Failed to sync pull requests' });
+    }
+  },
 };

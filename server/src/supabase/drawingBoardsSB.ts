@@ -14,4 +14,7 @@ export const DrawingBoardsSB = {
   async delete(id: string): Promise<drawing_boards> {
     return prisma.drawing_boards.delete({ where: { id } });
   },
+  async update(id: string, data: Prisma.drawing_boardsUpdateInput): Promise<drawing_boards> { 
+    return prisma.drawing_boards.update({ where: { id }, data })
+  }
 };

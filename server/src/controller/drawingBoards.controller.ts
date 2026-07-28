@@ -36,4 +36,15 @@ export const DrawingBoardsController = {
       res.status(500).json({ error: 'Failed to delete drawing board' });
     }
   },
+  async update(req: Request, res: Response) { 
+    try { 
+      const id = req.params.id as string;
+      const data = req.body;
+
+      await DrawingBoardsServices.update(id, data)
+      res.status(200).json({ message: 'Drawing board Updated'});
+    } catch(erros) { 
+      res.status(500).json({ error: 'Failed to update drawing board'});
+    }
+  }
 };

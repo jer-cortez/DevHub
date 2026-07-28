@@ -16,4 +16,7 @@ export const DrawingBoardsServices = {
   async delete(id: string): Promise<drawing_boards> {
     return DrawingBoardsSB.delete(id);
   },
+  async update(id: string, data: Prisma.drawing_boardsUpdateInput): Promise<drawing_boards> { 
+    return DrawingBoardsSB.update(id, data);
+  }
 };

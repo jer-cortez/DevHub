@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
+import Link from "next/link";
 import { apiFetch } from "@/lib/api";
 
 interface Repository {
@@ -86,9 +87,10 @@ export default function RepositoriesList() {
       {state.status === "ready" && state.repositories.length > 0 && (
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
           {state.repositories.map((repo) => (
-            <div
+            <Link
               key={repo.id}
-              className="rounded-lg border border-neutral-200 dark:border-neutral-800 p-4 space-y-2"
+              href={`/dashboard/repositories/${repo.id}/pull-requests`}
+              className="rounded-lg border border-neutral-200 dark:border-neutral-800 p-4 space-y-2 hover:border-neutral-400 dark:hover:border-neutral-600 transition-colors"
             >
               <div className="flex items-center justify-between">
                 <h3 className="font-medium">{repo.name}</h3>
@@ -106,7 +108,7 @@ export default function RepositoriesList() {
               <p className="text-xs text-neutral-400 dark:text-neutral-600">
                 Default branch: {repo.default_branch}
               </p>
-            </div>
+            </Link>
           ))}
         </div>
       )}
