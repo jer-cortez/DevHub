@@ -1,0 +1,17 @@
+"use strict";
+Object.defineProperty(exports, "__esModule", { value: true });
+exports.codeController = void 0;
+const code_services_1 = require("../services/code.services");
+exports.codeController = {
+    async getContents(req, res) {
+        try {
+            const repoId = req.params.repoId;
+            const path = req.query.path;
+            const data = await code_services_1.codeServices.getContents(repoId, path);
+            res.status(200).json({ data });
+        }
+        catch (error) {
+            res.status(500).json({ error: 'Fetch repo contents' });
+        }
+    }
+};

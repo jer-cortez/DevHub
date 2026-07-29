@@ -2,18 +2,19 @@
 
 import type { ReactNode } from "react";
 import { useEffect, useState } from "react";
-import { useParams } from "next/navigation";
+import { useParams, usePathname } from "next/navigation";
 import Link from "next/link";
 import { apiFetch } from "@/lib/api";
 
 const TABS = [
-  { label: "Code", segment: "code", enabled: false },
+  { label: "Code", segment: "code", enabled: true },
   { label: "Issues", segment: "issues", enabled: false },
   { label: "Pull Requests", segment: "pull-requests", enabled: true },
 ];
 
 export default function RepositoryLayout({ children }: { children: ReactNode }) {
   const { id } = useParams<{ id: string }>();
+  const pathname = usePathname();
   const [name, setName] = useState("");
 
   useEffect(() => {
@@ -35,7 +36,11 @@ export default function RepositoryLayout({ children }: { children: ReactNode }) 
             <Link
               key={tab.segment}
               href={`/dashboard/repositories/${id}/${tab.segment}`}
-              className="px-1 pb-2 text-sm font-medium border-b-2 border-neutral-900 dark:border-neutral-100"
+              className={
+                pathname?.includes(`/${tab.segment}`)
+                  ? "px-1 pb-2 text-sm font-medium border-b-2 border-neutral-900 dark:border-neutral-100"
+                  : "px-1 pb-2 text-sm text-neutral-500 dark:text-neutral-400"
+              }
             >
               {tab.label}
             </Link>

@@ -13,6 +13,7 @@ import { drawingBoardsRouter } from './gateway/routes/drawingBoards.routes';
 import { boardCollaboratorsRouter } from './gateway/routes/drawingBoardCollaborators.routes';
 import { notificationsRouter } from './gateway/routes/notifications.routes';
 import { authRouter } from './gateway/routes/auth.routes';
+import { codeRouter } from './gateway/routes/code.routes';
 import { AuthMiddleware } from './gateway/middleware/auth.middleware';
 
 // Handle BigInt serialization for repo_followers
@@ -34,6 +35,7 @@ app.use('/api/auth', authRouter);
 app.use('/api/users', usersRouter);
 app.use('/api/pull-requests', pullRequestRouter);
 app.use('/api/repositories', repositoriesRouter);
+app.use('/api/code', codeRouter);
 app.use('/api/organizations', organizationsRouter);
 app.use('/api/org-members', orgMembersRouter);
 app.use('/api/repo-followers', repoFollowersRouter);
