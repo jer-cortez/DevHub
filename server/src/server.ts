@@ -14,6 +14,8 @@ import { boardCollaboratorsRouter } from './gateway/routes/drawingBoardCollabora
 import { notificationsRouter } from './gateway/routes/notifications.routes';
 import { authRouter } from './gateway/routes/auth.routes';
 import { codeRouter } from './gateway/routes/code.routes';
+import { webhooksRouter } from './gateway/routes/webhooks.routes';
+import { eventsRouter } from './gateway/routes/events.routes';
 import { AuthMiddleware } from './gateway/middleware/auth.middleware';
 
 // Handle BigInt serialization for repo_followers
@@ -23,6 +25,16 @@ const app = express();
 const PORT = 8080;
 
 app.use(cors());
+
+// Mounted before express.json() and AuthMiddleware, deliberately:
+// - GitHub is not a Supabase-authenticated user, so this can't sit behind
+//   the global auth check like everything else.
+// - The webhook route needs the raw request body (via its own
+//   express.raw() on the route itself) to verify GitHub's signature;
+//   express.json() below would consume and parse the body first,
+//   destroying the exact bytes the signature was computed over.
+app.use('/api/webhooks', webhooksRouter);
+
 app.use(express.json());
 
 app.get('/api/home', (req, res) => {
@@ -35,6 +47,7 @@ app.use('/api/auth', authRouter);
 app.use('/api/users', usersRouter);
 app.use('/api/pull-requests', pullRequestRouter);
 app.use('/api/repositories', repositoriesRouter);
+app.use('/api/repositories', eventsRouter);
 app.use('/api/code', codeRouter);
 app.use('/api/organizations', organizationsRouter);
 app.use('/api/org-members', orgMembersRouter);

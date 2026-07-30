@@ -8,6 +8,10 @@ export const RepositoriesSB = {
   async findById(id: string): Promise<repositories | null> {
     return prisma.repositories.findUnique({ where: { id } });
   },
+  /** Looks up a local repo row by GitHub's numeric repo id — used by the webhook handler, which only knows the GitHub id from the payload, not our internal UUID. */
+  async findByGithubRepoId(githubRepoId: bigint): Promise<repositories | null> {
+    return prisma.repositories.findUnique({ where: { github_repo_id: githubRepoId } });
+  },
   async create(payload: Prisma.repositoriesCreateInput): Promise<repositories> {
     return prisma.repositories.create({ data: payload });
   },

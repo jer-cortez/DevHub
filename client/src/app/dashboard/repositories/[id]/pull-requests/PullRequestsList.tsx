@@ -1,7 +1,8 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { apiFetch } from "@/lib/api";
+import { useRepoEvents, type RepoEvent } from "@/lib/useRepoEvents";
 
 interface PullRequest {
   id: string;
@@ -28,6 +29,7 @@ export default function PullRequestsList({ repoId }: { repoId: string }) {
   const [state, setState] = useState<State>({ status: "loading" });
   const [syncing, setSyncing] = useState(false);
   const [syncError, setSyncError] = useState<string | null>(null);
+  const [commentCounts, setCommentCounts] = useState<Record<string, number>>({});
 
   const loadPullRequests = useCallback(async () => {
     setState({ status: "loading" });
@@ -38,7 +40,18 @@ export default function PullRequestsList({ repoId }: { repoId: string }) {
         setState({ status: "error", message: body.error ?? `Request failed (${res.status})` });
         return;
       }
-      setState({ status: "ready", pullRequests: body.data });
+      const pullRequests: PullRequest[] = body.data;
+      setState({ status: "ready", pullRequests });
+
+      // Fetch initial comment counts in one request, rather than one per PR.
+      if (pullRequests.length > 0) {
+        const prIds = pullRequests.map((pr) => pr.id).join(",");
+        const countsRes = await apiFetch(`/api/review-comments/counts?prIds=${prIds}`);
+        const countsBody = await countsRes.json();
+        if (countsRes.ok) {
+          setCommentCounts(countsBody.data);
+        }
+      }
     } catch (err: any) {
       setState({ status: "error", message: err.message });
     }
@@ -47,6 +60,27 @@ export default function PullRequestsList({ repoId }: { repoId: string }) {
   useEffect(() => {
     loadPullRequests();
   }, [loadPullRequests]);
+
+  // useRepoEvents re-subscribes whenever this callback identity changes, so
+  // it's kept stable via a ref rather than depending on `loadPullRequests`
+  // (which itself changes identity on every repoId change already handled
+  // by useRepoEvents's own dependency on repoId).
+  const loadPullRequestsRef = useRef(loadPullRequests);
+  loadPullRequestsRef.current = loadPullRequests;
+
+  const handleRepoEvent = useCallback((event: RepoEvent) => {
+    if (event.type === "pull_request") {
+      loadPullRequestsRef.current();
+    } else if (event.type === "comment") {
+      const comment = event.data as { pr_id: string };
+      setCommentCounts((prev) => ({
+        ...prev,
+        [comment.pr_id]: (prev[comment.pr_id] ?? 0) + 1,
+      }));
+    }
+  }, []);
+
+  useRepoEvents(repoId, handleRepoEvent);
 
   const handleSync = async () => {
     setSyncing(true);
@@ -111,9 +145,14 @@ export default function PullRequestsList({ repoId }: { repoId: string }) {
                   {pr.status}
                 </span>
               </div>
-              <p className="text-xs text-neutral-400 dark:text-neutral-600 mt-1">
-                {pr.base_branch} ← {pr.head_branch}
-              </p>
+              <div className="flex items-center justify-between mt-1">
+                <p className="text-xs text-neutral-400 dark:text-neutral-600">
+                  {pr.base_branch} ← {pr.head_branch}
+                </p>
+                <p className="text-xs text-neutral-400 dark:text-neutral-600">
+                  💬 {commentCounts[pr.id] ?? 0}
+                </p>
+              </div>
             </a>
           ))}
         </div>

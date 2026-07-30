@@ -121,13 +121,13 @@ model repositories {
 /// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
 model review_comments {
   id                String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  github_comment_id BigInt
-  review_id         String   @db.Uuid
+  github_comment_id BigInt   @unique
+  review_id         String?  @db.Uuid
   pr_id             String   @db.Uuid
   author_id         String   @db.Uuid
   body              String
-  file_path         String   @db.VarChar
-  line_number       Int
+  file_path         String?  @db.VarChar
+  line_number       Int?
   is_resolved       Boolean
   created_at        DateTime @default(now()) @db.Timestamp(6)
 }

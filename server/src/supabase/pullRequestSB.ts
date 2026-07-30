@@ -17,6 +17,17 @@ export const PullRequestSB = {
   async findByRepoId(repoId: string): Promise<pull_request[]> {
     return prisma.pull_request.findMany({ where: { repo_id: repoId } });
   },
+  async findByGithubPrId(githubPrId: bigint): Promise<pull_request | null> {
+    return prisma.pull_request.findUnique({ where: { github_pr_id: githubPrId } });
+  },
+  /**
+   * PR number is only unique per-repo (not globally, unlike github_pr_id),
+   * so this needs both. Used for the issue_comment webhook event, whose
+   * payload only carries the PR's number, not its global GitHub id.
+   */
+  async findByRepoIdAndNumber(repoId: string, prNumber: number): Promise<pull_request | null> {
+    return prisma.pull_request.findFirst({ where: { repo_id: repoId, github_pr_number: prNumber } });
+  },
   async upsertByGithubPrId(data: {
     github_pr_id: bigint;
     github_pr_number: number;

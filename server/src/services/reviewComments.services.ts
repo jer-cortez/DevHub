@@ -16,4 +16,22 @@ export const ReviewCommentsServices = {
   async delete(id: string): Promise<review_comments> {
     return ReviewCommentsSB.delete(id);
   },
+  async findByPrId(prId: string): Promise<review_comments[]> {
+    return ReviewCommentsSB.findByPrId(prId);
+  },
+  async upsertByGithubCommentId(data: {
+    github_comment_id: bigint;
+    pr_id: string;
+    author_id: string;
+    body: string;
+    review_id?: string | null;
+    file_path?: string | null;
+    line_number?: number | null;
+    is_resolved: boolean;
+  }): Promise<review_comments> {
+    return ReviewCommentsSB.upsertByGithubCommentId(data);
+  },
+  async countByPrIds(prIds: string[]): Promise<Record<string, number>> {
+    return ReviewCommentsSB.countByPrIds(prIds);
+  },
 };

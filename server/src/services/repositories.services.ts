@@ -20,6 +20,12 @@ export const RepositoriesServices = {
   async delete(id: string): Promise<repositories> {
     return RepositoriesSB.delete(id);
   },
+  /** Used by the webhook handler to map a GitHub payload's `repository.id` to our local repo row. */
+  async findByGithubRepoId(githubRepoId: bigint): Promise<repositories> {
+    const repo = await RepositoriesSB.findByGithubRepoId(githubRepoId);
+    if (!repo) throw new Error('Repository not found for GitHub repo id');
+    return repo;
+  },
   async upsertByGithubRepoId(data: {
     github_repo_id: bigint;
     org_id: string;
