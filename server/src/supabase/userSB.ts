@@ -14,6 +14,9 @@ export const UserSB = {
   async delete(id: string): Promise<User> {
     return prisma.user.delete({ where: { id } });
   },
+  async findByIds(ids: string[]): Promise<User[]> {
+    return prisma.user.findMany({ where: { id: { in: ids } } });
+  },
   async upsertByGithubId(data: {
     github_id: number;
     username: string;

@@ -4,6 +4,8 @@ import { OrganizationMembersController } from '../../controller/organizationMemb
 const router = express.Router();
 
 router.get('/all', OrganizationMembersController.findAll);
+router.get('/members', OrganizationMembersController.findAllWithUserInfo);
+router.post('/sync', OrganizationMembersController.sync);
 router.get('/:id', OrganizationMembersController.findById);
 router.post('/create', OrganizationMembersController.create);
 router.delete('/:id', OrganizationMembersController.delete);

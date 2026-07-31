@@ -26,4 +26,7 @@ export const UserServices = {
   }): Promise<User> {
     return UserSB.upsertByGithubId(data);
   },
+  async findByIds(ids: string[]): Promise<User[]> {
+    return UserSB.findByIds(ids);
+  },
 };

@@ -76,6 +76,8 @@ model organization_members {
   user_id   String   @default(dbgenerated("gen_random_uuid()")) @db.Uuid
   org_id    String   @default(dbgenerated("gen_random_uuid()")) @db.Uuid
   joined_at DateTime @db.Timestamp(6)
+
+  @@unique([user_id, org_id])
 }
 
 /// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.

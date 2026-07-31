@@ -14,4 +14,21 @@ export const OrganizationMembersSB = {
   async delete(id: string): Promise<organization_members> {
     return prisma.organization_members.delete({ where: { id } });
   },
+  /**
+   * Upserts a membership row keyed on the (user_id, org_id) pair, so
+   * re-running the members sync doesn't create duplicate rows for people
+   * who are already members. `joined_at` is only set on first insert —
+   * GitHub's list-members API doesn't return a join date, so there's
+   * nothing meaningful to update on an already-existing membership.
+   */
+  async upsertByUserAndOrg(data: {
+    user_id: string;
+    org_id: string;
+  }): Promise<organization_members> {
+    return prisma.organization_members.upsert({
+      where: { user_id_org_id: { user_id: data.user_id, org_id: data.org_id } },
+      update: {},
+      create: { ...data, joined_at: new Date() },
+    });
+  },
 };
