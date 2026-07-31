@@ -115,11 +115,33 @@ function CopyButton({ content }: { content: string }) {
 
 export default function CodeBrowser({ repoId, path }: { repoId: string; path: string }) {
   const [state, setState] = useState<State>({ status: "loading" });
+  const [branches, setBranches] = useState<string[]>([]);
+  const [branch, setBranch] = useState("");
   const isDark = usePrefersDark();
 
+  // Branch list + the repo's default branch are fetched once per repo, not
+  // per path — switching folders/files shouldn't re-fetch this.
   useEffect(() => {
+    setBranch("");
+    apiFetch(`/api/code/${repoId}/branches`)
+      .then(async (res) => {
+        const body = await res.json();
+        if (res.ok) setBranches(body.data);
+      })
+      .catch(() => {});
+
+    apiFetch(`/api/repositories/${repoId}`)
+      .then(async (res) => {
+        const body = await res.json();
+        if (res.ok) setBranch(body.data.default_branch);
+      })
+      .catch(() => {});
+  }, [repoId]);
+
+  useEffect(() => {
+    if (!branch) return;
     setState({ status: "loading" });
-    apiFetch(`/api/code/${repoId}/contents?path=${encodeURIComponent(path)}`)
+    apiFetch(`/api/code/${repoId}/contents?path=${encodeURIComponent(path)}&ref=${encodeURIComponent(branch)}`)
       .then(async (res) => {
         const body = await res.json();
         if (!res.ok) {
@@ -137,38 +159,54 @@ export default function CodeBrowser({ repoId, path }: { repoId: string; path: st
         }
       })
       .catch((err) => setState({ status: "error", message: err.message }));
-  }, [repoId, path]);
+  }, [repoId, path, branch]);
 
   const segments = path ? path.split("/") : [];
 
   return (
     <div className="space-y-3">
-      <div className="flex items-center gap-1 text-base font-mono">
-        <Link
-          href={`/dashboard/repositories/${repoId}/code`}
-          className="text-blue-600 dark:text-blue-400 hover:underline"
-        >
-          root
-        </Link>
-        {segments.map((segment, i) => {
-          const ancestorPath = segments.slice(0, i + 1).join("/");
-          const isLast = i === segments.length - 1;
-          return (
-            <span key={ancestorPath} className="flex items-center gap-1">
-              <span className="text-neutral-400 dark:text-neutral-600">/</span>
-              <Link
-                href={`/dashboard/repositories/${repoId}/code/${ancestorPath}`}
-                className={
-                  isLast
-                    ? "text-neutral-900 dark:text-neutral-100"
-                    : "text-blue-600 dark:text-blue-400 hover:underline"
-                }
-              >
-                {segment}
-              </Link>
-            </span>
-          );
-        })}
+      <div className="flex items-center justify-between">
+        <div className="flex items-center gap-1 text-base font-mono">
+          <Link
+            href={`/dashboard/repositories/${repoId}/code`}
+            className="text-blue-600 dark:text-blue-400 hover:underline"
+          >
+            root
+          </Link>
+          {segments.map((segment, i) => {
+            const ancestorPath = segments.slice(0, i + 1).join("/");
+            const isLast = i === segments.length - 1;
+            return (
+              <span key={ancestorPath} className="flex items-center gap-1">
+                <span className="text-neutral-400 dark:text-neutral-600">/</span>
+                <Link
+                  href={`/dashboard/repositories/${repoId}/code/${ancestorPath}`}
+                  className={
+                    isLast
+                      ? "text-neutral-900 dark:text-neutral-100"
+                      : "text-blue-600 dark:text-blue-400 hover:underline"
+                  }
+                >
+                  {segment}
+                </Link>
+              </span>
+            );
+          })}
+        </div>
+
+        {branches.length > 0 && (
+          <select
+            value={branch}
+            onChange={(e) => setBranch(e.target.value)}
+            className="text-sm rounded-md border border-neutral-300 dark:border-neutral-700 bg-transparent px-2 py-1"
+          >
+            {branches.map((b) => (
+              <option key={b} value={b}>
+                {b}
+              </option>
+            ))}
+          </select>
+        )}
       </div>
 
       {state.status === "loading" && (

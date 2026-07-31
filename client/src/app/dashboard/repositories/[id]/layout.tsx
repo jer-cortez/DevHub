@@ -2,58 +2,33 @@
 
 import type { ReactNode } from "react";
 import { useEffect, useState } from "react";
-import { useParams, usePathname } from "next/navigation";
-import Link from "next/link";
+import { useParams } from "next/navigation";
 import { apiFetch } from "@/lib/api";
-
-const TABS = [
-  { label: "Code", segment: "code", enabled: true },
-  { label: "Issues", segment: "issues", enabled: false },
-  { label: "Pull Requests", segment: "pull-requests", enabled: true },
-];
 
 export default function RepositoryLayout({ children }: { children: ReactNode }) {
   const { id } = useParams<{ id: string }>();
-  const pathname = usePathname();
   const [name, setName] = useState("");
+  const [isPrivate, setIsPrivate] = useState(false);
 
   useEffect(() => {
     apiFetch(`/api/repositories/${id}`)
       .then(async (res) => {
         const body = await res.json();
-        if (res.ok) setName(body.data.name);
+        if (res.ok) {
+          setName(body.data.name);
+          setIsPrivate(body.data.is_private);
+        }
       })
       .catch(() => {});
   }, [id]);
 
   return (
     <div className="space-y-4">
-      <h1 className="text-lg font-semibold">{name || "Repository"}</h1>
-
-      <div className="flex gap-4 border-b border-neutral-200 dark:border-neutral-800">
-        {TABS.map((tab) =>
-          tab.enabled ? (
-            <Link
-              key={tab.segment}
-              href={`/dashboard/repositories/${id}/${tab.segment}`}
-              className={
-                pathname?.includes(`/${tab.segment}`)
-                  ? "px-1 pb-2 text-sm font-medium border-b-2 border-neutral-900 dark:border-neutral-100"
-                  : "px-1 pb-2 text-sm text-neutral-500 dark:text-neutral-400"
-              }
-            >
-              {tab.label}
-            </Link>
-          ) : (
-            <span
-              key={tab.segment}
-              className="px-1 pb-2 text-sm text-neutral-400 dark:text-neutral-600 cursor-not-allowed"
-              title="Coming soon"
-            >
-              {tab.label}
-            </span>
-          )
-        )}
+      <div className="flex items-center gap-2">
+        <h1 className="text-xl font-semibold">{name || "Repository"}</h1>
+        <span className="text-xs rounded-full border border-neutral-300 dark:border-neutral-700 px-2 py-0.5 text-neutral-500 dark:text-neutral-400">
+          {isPrivate ? "Private" : "Public"}
+        </span>
       </div>
 
       {children}

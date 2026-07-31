@@ -3,12 +3,12 @@ import { octokit } from '../lib/github';
 
 const ORG_NAME = process.env.GITHUB_ORG_NAME!;
 
-export const codeServices = { 
-    async getContents(repoId: string, path: string) { 
-        const repo = await RepositoriesServices.findById(repoId); 
+export const codeServices = {
+    async getContents(repoId: string, path: string, ref?: string) {
+        const repo = await RepositoriesServices.findById(repoId);
 
         const { data } = await octokit.rest.repos.getContent(
-            { owner: ORG_NAME, repo: repo.name, path, ref: repo.default_branch }
+            { owner: ORG_NAME, repo: repo.name, path, ref: ref || repo.default_branch }
         )
 
         if (Array.isArray(data)) {
@@ -26,6 +26,10 @@ export const codeServices = {
         }
 
         throw new Error(`Unsupported content type at path "${path}"`);
-    }
-
+    },
+    async listBranches(repoId: string) {
+        const repo = await RepositoriesServices.findById(repoId);
+        const { data } = await octokit.rest.repos.listBranches({ owner: ORG_NAME, repo: repo.name });
+        return data.map((branch) => branch.name);
+    },
 }
