@@ -15,15 +15,13 @@ export const AuthMiddleware = async (
         return
     }
 
-    const { data , error } = await supabaseAdmin.auth.getUser(token);
+    const user = await AuthHandler.verifySupabaseToken(token)
 
-    if ( error || !data.user) {
-        console.error('Error verifying token:', error);
+    if (!user) { 
         res.status(401).json({ error : "Invaild or expired token" });
         return
     }
-
-    const user = data.user;
+  
     const username = user.user_metadata.user_name;
     const isMember = await AuthHandler.verifyOrgMembership(username, token);
 

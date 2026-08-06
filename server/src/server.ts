@@ -17,12 +17,18 @@ import { codeRouter } from './gateway/routes/code.routes';
 import { webhooksRouter } from './gateway/routes/webhooks.routes';
 import { eventsRouter } from './gateway/routes/events.routes';
 import { AuthMiddleware } from './gateway/middleware/auth.middleware';
+import http from 'http';
+import { WebSocketServer } from 'ws';
+
+
 
 // Handle BigInt serialization for repo_followers
 (BigInt.prototype as any).toJSON = function () { return this.toString(); };
 
 const app = express();
 const PORT = 8080;
+const server = http.createServer(app)
+const wss = new WebSocketServer({ noServer: true });
 
 app.use(cors());
 
@@ -59,6 +65,16 @@ app.use('/api/drawing-boards', drawingBoardsRouter);
 app.use('/api/board-collaborators', boardCollaboratorsRouter);
 app.use('/api/notifications', notificationsRouter);
 
-app.listen(PORT, () => {
+
+server.on('upgrade', (req, socket, head) => {
+  const match = req.url?.match(/^\/ws\/boards\/([^/?]+)/);
+  if (!match) { socket.destroy(); return; }
+  wss.handleUpgrade(req, socket, head, (ws) => {
+    wss.emit('connection', ws, req, match[1]); // match[1] is the boardId
+  });
+});
+
+server.listen(PORT, () => {
   console.log(`Server started on port ${PORT}`);
 });
+

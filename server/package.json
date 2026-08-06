@@ -21,13 +21,15 @@
     "dotenv": "^17.4.2",
     "express": "^5.2.1",
     "ioredis": "^5.11.1",
-    "pg": "^8.22.0"
+    "pg": "^8.22.0",
+    "ws": "^8.21.2"
   },
   "devDependencies": {
     "@types/cors": "^2.8.19",
     "@types/express": "^5.0.6",
     "@types/node": "^26.1.0",
     "@types/pg": "^8.20.0",
+    "@types/ws": "^8.18.1",
     "nodemon": "^3.1.14",
     "prisma": "^7.8.0",
     "ts-node": "^10.9.2",
