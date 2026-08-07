@@ -24,4 +24,14 @@ export const codeController = {
             res.status(500).json({ error: 'Failed to fetch branches' });
         }
     },
+    async getLastCommit(req: Request, res: Response) {
+        try {
+            const repoId = req.params.repoId as string;
+            const ref = req.query.ref as string | undefined;
+            const commit = await codeServices.getLastCommit(repoId, ref);
+            res.status(200).json({ data: commit });
+        } catch (error) {
+            res.status(500).json({ error: 'Failed to fetch last commit' });
+        }
+    },
 }
