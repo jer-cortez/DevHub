@@ -75,7 +75,7 @@ const REPO_TABS: RepoTab[] = [
   { label: "Code", segment: "code", enabled: true, icon: CodeIcon },
   { label: "Issues", segment: "issues", enabled: false, icon: IssueIcon },
   { label: "Pull requests", segment: "pull-requests", enabled: true, icon: PullRequestIcon },
-  { label: "System Design", segment: "system-design", enabled: false, icon: DiagramIcon },
+  { label: "System Design", segment: "system-design", enabled: true, icon: DiagramIcon },
 ];
 
 export default function DashboardShell({

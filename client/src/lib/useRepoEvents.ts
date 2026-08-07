@@ -40,7 +40,16 @@ export function useRepoEvents(repoId: string, onEvent: (event: RepoEvent) => voi
           }
         },
         onmessage(message) {
-          onEvent(JSON.parse(message.data));
+          // A dropped/aborted connection (e.g. navigating away from this
+          // page) can deliver one last empty or partial chunk right as
+          // teardown happens, before the abort signal is honored — guard
+          // against that rather than letting JSON.parse throw on it.
+          if (!message.data) return;
+          try {
+            onEvent(JSON.parse(message.data));
+          } catch (err) {
+            console.error("Failed to parse repo event:", err, message.data);
+          }
         },
         onerror(err) {
           console.error("Repo events connection error:", err);

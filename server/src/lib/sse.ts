@@ -65,7 +65,13 @@ redisSub.subscribe(REPO_EVENTS_CHANNEL, (err) => {
 // including this one — the webhook handler never writes to SSE clients
 // directly, it only publishes to Redis, so this is the single place
 // events actually reach connected browsers.
-redisSub.on('message', (_channel, message) => {
+//
+// redisSub is shared with boardSocket.ts (subscribed to a different
+// channel for the drawing-board feature), and ioredis fires every
+// registered 'message' listener for every channel that client is
+// subscribed to — so this has to ignore messages meant for that channel.
+redisSub.on('message', (channel, message) => {
+  if (channel !== REPO_EVENTS_CHANNEL) return;
   try {
     const event: RepoEvent = JSON.parse(message);
     broadcastToRepo(event.repoId, event);

@@ -10,6 +10,9 @@ const REDIS_URL = process.env.REDIS_URL!;
  */
 export const REPO_EVENTS_CHANNEL = 'repo-events';
 
+/** Broadcasts live drawing-board edits (nodes/edges updates) between server instances, same role as REPO_EVENTS_CHANNEL but for the whiteboard feature. */
+export const BOARD_EVENTS_CHANNEL = 'board-events';
+
 /**
  * Two separate Redis connections, not one shared client:
  * once a connection issues SUBSCRIBE, ioredis (like Redis itself) puts it

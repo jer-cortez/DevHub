@@ -16,5 +16,8 @@ export const DrawingBoardsSB = {
   },
   async update(id: string, data: Prisma.drawing_boardsUpdateInput): Promise<drawing_boards> { 
     return prisma.drawing_boards.update({ where: { id }, data })
+  }, 
+  async findByRepoId(repoId: string): Promise<drawing_boards[]> {
+    return prisma.drawing_boards.findMany({ where: { repo_id: repoId } });
   }
 };

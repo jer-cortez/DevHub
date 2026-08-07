@@ -4,6 +4,7 @@ import { DrawingBoardsController } from '../../controller/drawingBoards.controll
 const router = express.Router();
 
 router.get('/all', DrawingBoardsController.findAll);
+router.get('/by-repo/:repoId', DrawingBoardsController.findByRepoId);
 router.get('/:id', DrawingBoardsController.findById);
 router.post('/create', DrawingBoardsController.create);
 router.delete('/:id', DrawingBoardsController.delete);

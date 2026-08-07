@@ -18,9 +18,7 @@ import { webhooksRouter } from './gateway/routes/webhooks.routes';
 import { eventsRouter } from './gateway/routes/events.routes';
 import { AuthMiddleware } from './gateway/middleware/auth.middleware';
 import http from 'http';
-import { WebSocketServer } from 'ws';
-
-
+import { wss } from './lib/boardSocket';
 
 // Handle BigInt serialization for repo_followers
 (BigInt.prototype as any).toJSON = function () { return this.toString(); };
@@ -28,7 +26,6 @@ import { WebSocketServer } from 'ws';
 const app = express();
 const PORT = 8080;
 const server = http.createServer(app)
-const wss = new WebSocketServer({ noServer: true });
 
 app.use(cors());
 
