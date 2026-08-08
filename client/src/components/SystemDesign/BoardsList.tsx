@@ -2,14 +2,7 @@
 
 import { useCallback, useEffect, useState } from "react";
 import Link from "next/link";
-import { apiFetch } from "@/lib/api";
-
-interface Board {
-  id: string;
-  title: string;
-  type: string;
-  updated_at: string;
-}
+import { DrawingBoardsAPI, type Board } from "@/API/DrawingBoardsAPI";
 
 type State =
   | { status: "loading" }
@@ -24,13 +17,8 @@ export default function BoardsList({ repoId }: { repoId: string }) {
   const loadBoards = useCallback(async () => {
     setState({ status: "loading" });
     try {
-      const res = await apiFetch(`/api/drawing-boards/by-repo/${repoId}`);
-      const body = await res.json();
-      if (!res.ok) {
-        setState({ status: "error", message: body.error ?? `Request failed (${res.status})` });
-        return;
-      }
-      setState({ status: "ready", boards: body.data });
+      const boards = await DrawingBoardsAPI.findByRepoId(repoId);
+      setState({ status: "ready", boards });
     } catch (err: any) {
       setState({ status: "error", message: err.message });
     }
@@ -47,22 +35,13 @@ export default function BoardsList({ repoId }: { repoId: string }) {
     setCreating(true);
     setCreateError(null);
     try {
-      const res = await apiFetch("/api/drawing-boards/create", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          repo_id: repoId,
-          type: "system-design",
-          title,
-          nodes: [],
-          edges: [],
-        }),
+      await DrawingBoardsAPI.create({
+        repo_id: repoId,
+        type: "system-design",
+        title,
+        nodes: [],
+        edges: [],
       });
-      const body = await res.json();
-      if (!res.ok) {
-        setCreateError(body.error ?? `Create failed (${res.status})`);
-        return;
-      }
       await loadBoards();
     } catch (err: any) {
       setCreateError(err.message);

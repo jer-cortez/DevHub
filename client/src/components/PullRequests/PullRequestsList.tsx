@@ -1,18 +1,9 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState } from "react";
-import { apiFetch } from "@/lib/api";
-import { useRepoEvents, type RepoEvent } from "@/lib/useRepoEvents";
-
-interface PullRequest {
-  id: string;
-  github_pr_number: number;
-  title: string;
-  status: string;
-  base_branch: string;
-  head_branch: string;
-  github_url: string;
-}
+import { PullRequestsAPI, type PullRequest } from "@/API/PullRequestsAPI";
+import { ReviewCommentsAPI } from "@/API/ReviewCommentsAPI";
+import { useRepoEvents, type RepoEvent } from "@/hooks/useRepoEvents";
 
 type State =
   | { status: "loading" }
@@ -34,23 +25,13 @@ export default function PullRequestsList({ repoId }: { repoId: string }) {
   const loadPullRequests = useCallback(async () => {
     setState({ status: "loading" });
     try {
-      const res = await apiFetch(`/api/pull-requests/by-repo/${repoId}`);
-      const body = await res.json();
-      if (!res.ok) {
-        setState({ status: "error", message: body.error ?? `Request failed (${res.status})` });
-        return;
-      }
-      const pullRequests: PullRequest[] = body.data;
+      const pullRequests = await PullRequestsAPI.findByRepoId(repoId);
       setState({ status: "ready", pullRequests });
 
       // Fetch initial comment counts in one request, rather than one per PR.
       if (pullRequests.length > 0) {
-        const prIds = pullRequests.map((pr) => pr.id).join(",");
-        const countsRes = await apiFetch(`/api/review-comments/counts?prIds=${prIds}`);
-        const countsBody = await countsRes.json();
-        if (countsRes.ok) {
-          setCommentCounts(countsBody.data);
-        }
+        const counts = await ReviewCommentsAPI.countsByPrIds(pullRequests.map((pr) => pr.id));
+        setCommentCounts(counts);
       }
     } catch (err: any) {
       setState({ status: "error", message: err.message });
@@ -86,12 +67,7 @@ export default function PullRequestsList({ repoId }: { repoId: string }) {
     setSyncing(true);
     setSyncError(null);
     try {
-      const res = await apiFetch(`/api/pull-requests/sync/${repoId}`, { method: "POST" });
-      const body = await res.json();
-      if (!res.ok) {
-        setSyncError(body.error ?? `Sync failed (${res.status})`);
-        return;
-      }
+      await PullRequestsAPI.syncFromGithub(repoId);
       await loadPullRequests();
     } catch (err: any) {
       setSyncError(err.message);

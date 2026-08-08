@@ -4,8 +4,11 @@ import type { ReactNode } from "react";
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import SignOutButton from "@/components/SignOutButton";
-import { apiFetch } from "@/lib/api";
+import SignOutButton from "@/components/Common/SignOutButton";
+import { ChevronDownIcon } from "@/components/Common/icons";
+import { OrganizationsAPI, type Organization } from "@/API/OrganizationsAPI";
+import { RepositoriesAPI } from "@/API/RepositoriesAPI";
+import { OrganizationMembersAPI } from "@/API/OrganizationMembersAPI";
 
 type CountKey = "repositories" | "people";
 
@@ -56,14 +59,6 @@ function DiagramIcon() {
   );
 }
 
-function ChevronIcon() {
-  return (
-    <svg viewBox="0 0 16 16" width="14" height="14" className="fill-current text-neutral-400 dark:text-neutral-600">
-      <path d="M4.22 6.22a.75.75 0 0 1 1.06 0L8 8.94l2.72-2.72a.75.75 0 1 1 1.06 1.06l-3.25 3.25a.75.75 0 0 1-1.06 0L4.22 7.28a.75.75 0 0 1 0-1.06Z" />
-    </svg>
-  );
-}
-
 interface RepoTab {
   label: string;
   segment: string;
@@ -89,7 +84,7 @@ export default function DashboardShell({
 }) {
   const pathname = usePathname();
   const [counts, setCounts] = useState<Partial<Record<CountKey, number>>>({});
-  const [org, setOrg] = useState<{ name: string; avatar_url: string } | null>(null);
+  const [org, setOrg] = useState<Organization | null>(null);
   const [repoName, setRepoName] = useState("");
 
   // When the URL is /dashboard/repositories/<id>/..., that <id> puts the
@@ -99,10 +94,9 @@ export default function DashboardShell({
   const repoId = pathname?.match(/^\/dashboard\/repositories\/([^/]+)(\/|$)/)?.[1];
 
   useEffect(() => {
-    apiFetch("/api/organizations/all")
-      .then(async (res) => {
-        const body = await res.json();
-        if (res.ok && body.data.length > 0) setOrg(body.data[0]);
+    OrganizationsAPI.findAll()
+      .then((orgs) => {
+        if (orgs.length > 0) setOrg(orgs[0]);
       })
       .catch(() => {});
   }, []);
@@ -112,28 +106,19 @@ export default function DashboardShell({
       setRepoName("");
       return;
     }
-    apiFetch(`/api/repositories/${repoId}`)
-      .then(async (res) => {
-        const body = await res.json();
-        if (res.ok) setRepoName(body.data.name);
-      })
+    RepositoriesAPI.findById(repoId)
+      .then((repo) => setRepoName(repo.name))
       .catch(() => {});
   }, [repoId]);
 
   useEffect(() => {
     if (repoId) return; // org-level counts aren't shown while in repo context
-    apiFetch("/api/repositories/all")
-      .then(async (res) => {
-        const body = await res.json();
-        if (res.ok) setCounts((c) => ({ ...c, repositories: body.data.length }));
-      })
+    RepositoriesAPI.findAll()
+      .then((repos) => setCounts((c) => ({ ...c, repositories: repos.length })))
       .catch(() => {});
 
-    apiFetch("/api/org-members/members")
-      .then(async (res) => {
-        const body = await res.json();
-        if (res.ok) setCounts((c) => ({ ...c, people: body.data.length }));
-      })
+    OrganizationMembersAPI.findAllWithUserInfo()
+      .then((members) => setCounts((c) => ({ ...c, people: members.length })))
       .catch(() => {});
   }, [repoId]);
 
@@ -155,7 +140,7 @@ export default function DashboardShell({
             <>
               <span className="text-neutral-400 dark:text-neutral-600">/</span>
               <span className="font-semibold">{repoName}</span>
-              <ChevronIcon />
+              <ChevronDownIcon />
             </>
           )}
         </div>

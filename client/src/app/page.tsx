@@ -1,4 +1,4 @@
-import GitHubLoginButton from "@/components/GitHubLoginButton";
+import GitHubLoginButton from "@/components/Common/GitHubLoginButton";
 
 export default function LoginPage() {
   return (

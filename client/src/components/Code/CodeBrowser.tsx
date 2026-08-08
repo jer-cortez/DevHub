@@ -6,30 +6,15 @@ import { Prism as SyntaxHighlighter } from "react-syntax-highlighter";
 import { vs, vscDarkPlus } from "react-syntax-highlighter/dist/esm/styles/prism";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
-import { apiFetch } from "@/lib/api";
-import { FolderIcon, FileIcon, BranchIcon, ChevronDownIcon } from "../icons";
-import { useCodeBranch } from "../code-context";
-
-interface DirEntry {
-  name: string;
-  path: string;
-  type: "file" | "dir";
-  size: number;
-}
-
-interface FileEntry {
-  type: "file";
-  name: string;
-  path: string;
-  size: number;
-  content: string;
-}
+import { CodeAPI, type DirEntry, type LastCommit } from "@/API/CodeAPI";
+import { FolderIcon, FileIcon, BranchIcon, ChevronDownIcon } from "@/components/Common/icons";
+import { useCodeBranch } from "@/contexts/CodeBranchContext";
 
 type State =
   | { status: "loading" }
   | { status: "error"; message: string }
   | { status: "dir"; entries: DirEntry[] }
-  | { status: "file"; file: FileEntry };
+  | { status: "file"; file: { type: "file"; name: string; path: string; size: number; content: string } };
 
 const EXTENSION_LANGUAGE_MAP: Record<string, string> = {
   ts: "typescript",
@@ -73,15 +58,6 @@ function usePrefersDark(): boolean {
   }, []);
 
   return isDark;
-}
-
-interface LastCommit {
-  shortSha: string;
-  message: string;
-  authorLogin: string;
-  authorAvatarUrl: string | null;
-  date: string | null;
-  totalCount: number;
 }
 
 function HistoryIcon() {
@@ -162,11 +138,8 @@ export default function CodeBrowser({ repoId, path }: { repoId: string; path: st
   // getLastCommit comment for why), re-fetched when the branch changes.
   useEffect(() => {
     if (!branch) return;
-    apiFetch(`/api/code/${repoId}/last-commit?ref=${encodeURIComponent(branch)}`)
-      .then(async (res) => {
-        const body = await res.json();
-        if (res.ok) setLastCommit(body.data);
-      })
+    CodeAPI.getLastCommit(repoId, branch)
+      .then(setLastCommit)
       .catch(() => {});
   }, [repoId, branch]);
 
@@ -174,21 +147,16 @@ export default function CodeBrowser({ repoId, path }: { repoId: string; path: st
     if (!branch) return;
     setState({ status: "loading" });
     setFilterQuery("");
-    apiFetch(`/api/code/${repoId}/contents?path=${encodeURIComponent(path)}&ref=${encodeURIComponent(branch)}`)
-      .then(async (res) => {
-        const body = await res.json();
-        if (!res.ok) {
-          setState({ status: "error", message: body.error ?? `Request failed (${res.status})` });
-          return;
-        }
-        if (Array.isArray(body.data)) {
-          const entries = [...body.data].sort((a: DirEntry, b: DirEntry) => {
+    CodeAPI.getContents(repoId, path, branch)
+      .then((data) => {
+        if (Array.isArray(data)) {
+          const entries = [...data].sort((a, b) => {
             if (a.type !== b.type) return a.type === "dir" ? -1 : 1;
             return a.name.localeCompare(b.name);
           });
           setState({ status: "dir", entries });
         } else {
-          setState({ status: "file", file: body.data });
+          setState({ status: "file", file: data });
         }
       })
       .catch((err) => setState({ status: "error", message: err.message }));
@@ -201,15 +169,8 @@ export default function CodeBrowser({ repoId, path }: { repoId: string; path: st
       setReadme(null);
       return;
     }
-    apiFetch(`/api/code/${repoId}/contents?path=README.md&ref=${encodeURIComponent(branch)}`)
-      .then(async (res) => {
-        if (!res.ok) {
-          setReadme(null);
-          return;
-        }
-        const body = await res.json();
-        setReadme(typeof body.data?.content === "string" ? body.data.content : null);
-      })
+    CodeAPI.getContents(repoId, "README.md", branch)
+      .then((data) => setReadme("content" in data ? data.content : null))
       .catch(() => setReadme(null));
   }, [repoId, path, branch]);
 

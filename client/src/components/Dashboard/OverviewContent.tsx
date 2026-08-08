@@ -2,20 +2,9 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
-import { apiFetch } from "@/lib/api";
-
-interface Organization {
-  id: string;
-  name: string;
-  avatar_url: string;
-}
-
-interface Repository {
-  id: string;
-  name: string;
-  description: string;
-  is_private: boolean;
-}
+import { OrganizationsAPI, type Organization } from "@/API/OrganizationsAPI";
+import { RepositoriesAPI, type Repository } from "@/API/RepositoriesAPI";
+import { OrganizationMembersAPI } from "@/API/OrganizationMembersAPI";
 
 export default function OverviewContent() {
   const [org, setOrg] = useState<Organization | null>(null);
@@ -23,25 +12,18 @@ export default function OverviewContent() {
   const [memberCount, setMemberCount] = useState<number | null>(null);
 
   useEffect(() => {
-    apiFetch("/api/organizations/all")
-      .then(async (res) => {
-        const body = await res.json();
-        if (res.ok && body.data.length > 0) setOrg(body.data[0]);
+    OrganizationsAPI.findAll()
+      .then((orgs) => {
+        if (orgs.length > 0) setOrg(orgs[0]);
       })
       .catch(() => {});
 
-    apiFetch("/api/repositories/all")
-      .then(async (res) => {
-        const body = await res.json();
-        if (res.ok) setRepositories(body.data);
-      })
+    RepositoriesAPI.findAll()
+      .then(setRepositories)
       .catch(() => {});
 
-    apiFetch("/api/org-members/members")
-      .then(async (res) => {
-        const body = await res.json();
-        if (res.ok) setMemberCount(body.data.length);
-      })
+    OrganizationMembersAPI.findAllWithUserInfo()
+      .then((members) => setMemberCount(members.length))
       .catch(() => {});
   }, []);
 

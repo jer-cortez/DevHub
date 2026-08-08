@@ -1,16 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
-import { apiFetch } from "@/lib/api";
-
-interface OrgMember {
-  id: string;
-  user: {
-    id: string;
-    username: string;
-    avatar_url: string | null;
-  };
-}
+import { OrganizationMembersAPI, type OrgMember } from "@/API/OrganizationMembersAPI";
 
 type State =
   | { status: "loading" }
@@ -25,13 +16,8 @@ export default function PeopleList() {
   const loadMembers = useCallback(async () => {
     setState({ status: "loading" });
     try {
-      const res = await apiFetch("/api/org-members/members");
-      const body = await res.json();
-      if (!res.ok) {
-        setState({ status: "error", message: body.error ?? `Request failed (${res.status})` });
-        return;
-      }
-      setState({ status: "ready", members: body.data });
+      const members = await OrganizationMembersAPI.findAllWithUserInfo();
+      setState({ status: "ready", members });
     } catch (err: any) {
       setState({ status: "error", message: err.message });
     }
@@ -45,12 +31,7 @@ export default function PeopleList() {
     setSyncing(true);
     setSyncError(null);
     try {
-      const res = await apiFetch("/api/org-members/sync", { method: "POST" });
-      const body = await res.json();
-      if (!res.ok) {
-        setSyncError(body.error ?? `Sync failed (${res.status})`);
-        return;
-      }
+      await OrganizationMembersAPI.syncFromGithub();
       await loadMembers();
     } catch (err: any) {
       setSyncError(err.message);

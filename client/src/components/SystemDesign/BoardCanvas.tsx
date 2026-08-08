@@ -18,10 +18,10 @@ import {
   type Connection,
 } from "@xyflow/react";
 import "@xyflow/react/dist/style.css";
-import { useBoardSocket } from "@/lib/useBoardSocket";
+import { useBoardSocket } from "@/hooks/useBoardSocket";
 import TableNode from "./TableNode";
 import AddTableDialog, { type TableStyle } from "./AddTableDialog";
-import { BoardActionsContext } from "./board-context";
+import { BoardActionsContext } from "@/contexts/BoardActionsContext";
 
 const nodeTypes = { table: TableNode };
 
@@ -142,63 +142,63 @@ export default function BoardCanvas({ boardId }: { boardId: string }) {
 
   return (
     <BoardActionsContext.Provider value={boardActions}>
-    <div className="space-y-2">
-      <div className="flex items-center justify-between">
-        <div className="flex items-center gap-3">
-          <button
-            onClick={() => setShowAddDialog(true)}
-            className="text-sm rounded-md px-3 py-1.5 bg-neutral-900 text-white dark:bg-neutral-100 dark:text-neutral-900"
-          >
-            Add table
-          </button>
+      <div className="space-y-2">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            <button
+              onClick={() => setShowAddDialog(true)}
+              className="text-sm rounded-md px-3 py-1.5 bg-neutral-900 text-white dark:bg-neutral-100 dark:text-neutral-900"
+            >
+              Add table
+            </button>
 
-          <div className="flex items-center rounded-md border border-neutral-300 dark:border-neutral-700 overflow-hidden">
-            {LINE_STYLE_OPTIONS.map((option) => (
-              <button
-                key={option.value}
-                onClick={() => setLineStyle(option.value)}
-                className={
-                  lineStyle === option.value
-                    ? "text-sm px-3 py-1.5 bg-neutral-900 text-white dark:bg-neutral-100 dark:text-neutral-900"
-                    : "text-sm px-3 py-1.5 text-neutral-600 dark:text-neutral-300 hover:bg-neutral-100 dark:hover:bg-neutral-800"
-                }
-              >
-                {option.label}
-              </button>
-            ))}
+            <div className="flex items-center rounded-md border border-neutral-300 dark:border-neutral-700 overflow-hidden">
+              {LINE_STYLE_OPTIONS.map((option) => (
+                <button
+                  key={option.value}
+                  onClick={() => setLineStyle(option.value)}
+                  className={
+                    lineStyle === option.value
+                      ? "text-sm px-3 py-1.5 bg-neutral-900 text-white dark:bg-neutral-100 dark:text-neutral-900"
+                      : "text-sm px-3 py-1.5 text-neutral-600 dark:text-neutral-300 hover:bg-neutral-100 dark:hover:bg-neutral-800"
+                  }
+                >
+                  {option.label}
+                </button>
+              ))}
+            </div>
           </div>
+
+          <span className="text-xs text-neutral-400 dark:text-neutral-600">
+            {connected ? "Connected — live" : "Connecting..."}
+          </span>
         </div>
 
-        <span className="text-xs text-neutral-400 dark:text-neutral-600">
-          {connected ? "Connected — live" : "Connecting..."}
-        </span>
-      </div>
+        <div className="h-[70vh] rounded-lg border border-neutral-200 dark:border-neutral-800 overflow-hidden">
+          <ReactFlow
+            nodes={nodes}
+            edges={edges}
+            nodeTypes={nodeTypes}
+            onNodesChange={onNodesChange}
+            onEdgesChange={onEdgesChange}
+            onConnect={onConnect}
+            onNodeDragStop={onNodeDragStop}
+            connectionLineType={
+              lineStyle === "straight" ? ConnectionLineType.Straight : ConnectionLineType.SmoothStep
+            }
+            connectionMode={ConnectionMode.Loose}
+            fitView
+          >
+            <Background />
+            <Controls />
+            <MiniMap />
+          </ReactFlow>
+        </div>
 
-      <div className="h-[70vh] rounded-lg border border-neutral-200 dark:border-neutral-800 overflow-hidden">
-        <ReactFlow
-          nodes={nodes}
-          edges={edges}
-          nodeTypes={nodeTypes}
-          onNodesChange={onNodesChange}
-          onEdgesChange={onEdgesChange}
-          onConnect={onConnect}
-          onNodeDragStop={onNodeDragStop}
-          connectionLineType={
-            lineStyle === "straight" ? ConnectionLineType.Straight : ConnectionLineType.SmoothStep
-          }
-          connectionMode={ConnectionMode.Loose}
-          fitView
-        >
-          <Background />
-          <Controls />
-          <MiniMap />
-        </ReactFlow>
+        {showAddDialog && (
+          <AddTableDialog onSubmit={handleCreateTable} onClose={() => setShowAddDialog(false)} />
+        )}
       </div>
-
-      {showAddDialog && (
-        <AddTableDialog onSubmit={handleCreateTable} onClose={() => setShowAddDialog(false)} />
-      )}
-    </div>
     </BoardActionsContext.Provider>
   );
 }

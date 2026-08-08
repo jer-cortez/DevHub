@@ -3,16 +3,10 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { apiFetch } from "@/lib/api";
-import { FolderIcon, FileIcon, ChevronRightIcon } from "./icons";
+import { CodeAPI, type DirEntry } from "@/API/CodeAPI";
+import { FolderIcon, FileIcon, ChevronRightIcon } from "@/components/Common/icons";
 
-interface Entry {
-  name: string;
-  path: string;
-  type: "file" | "dir";
-}
-
-function sortEntries(entries: Entry[]): Entry[] {
+function sortEntries(entries: DirEntry[]): DirEntry[] {
   return [...entries].sort((a, b) => {
     if (a.type !== b.type) return a.type === "dir" ? -1 : 1;
     return a.name.localeCompare(b.name);
@@ -27,11 +21,11 @@ function TreeNode({
 }: {
   repoId: string;
   branch: string;
-  entry: Entry;
+  entry: DirEntry;
   depth: number;
 }) {
   const [expanded, setExpanded] = useState(false);
-  const [children, setChildren] = useState<Entry[] | null>(null);
+  const [children, setChildren] = useState<DirEntry[] | null>(null);
   const pathname = usePathname();
 
   if (entry.type === "file") {
@@ -55,12 +49,9 @@ function TreeNode({
   const toggle = async () => {
     if (!expanded && children === null) {
       try {
-        const res = await apiFetch(
-          `/api/code/${repoId}/contents?path=${encodeURIComponent(entry.path)}&ref=${encodeURIComponent(branch)}`
-        );
-        const body = await res.json();
-        if (res.ok && Array.isArray(body.data)) {
-          setChildren(sortEntries(body.data));
+        const data = await CodeAPI.getContents(repoId, entry.path, branch);
+        if (Array.isArray(data)) {
+          setChildren(sortEntries(data));
         }
       } catch {
         // Leave children null — toggle will just show nothing under this
@@ -93,16 +84,13 @@ function TreeNode({
 }
 
 export default function FileTree({ repoId, branch }: { repoId: string; branch: string }) {
-  const [entries, setEntries] = useState<Entry[] | null>(null);
+  const [entries, setEntries] = useState<DirEntry[] | null>(null);
 
   useEffect(() => {
     setEntries(null);
-    apiFetch(`/api/code/${repoId}/contents?path=&ref=${encodeURIComponent(branch)}`)
-      .then(async (res) => {
-        const body = await res.json();
-        if (res.ok && Array.isArray(body.data)) {
-          setEntries(sortEntries(body.data));
-        }
+    CodeAPI.getContents(repoId, "", branch)
+      .then((data) => {
+        if (Array.isArray(data)) setEntries(sortEntries(data));
       })
       .catch(() => {});
   }, [repoId, branch]);

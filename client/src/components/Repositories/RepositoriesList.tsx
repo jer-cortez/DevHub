@@ -2,15 +2,7 @@
 
 import { useCallback, useEffect, useState } from "react";
 import Link from "next/link";
-import { apiFetch } from "@/lib/api";
-
-interface Repository {
-  id: string;
-  name: string;
-  description: string;
-  is_private: boolean;
-  default_branch: string;
-}
+import { RepositoriesAPI, type Repository } from "@/API/RepositoriesAPI";
 
 type State =
   | { status: "loading" }
@@ -25,13 +17,8 @@ export default function RepositoriesList() {
   const loadRepositories = useCallback(async () => {
     setState({ status: "loading" });
     try {
-      const res = await apiFetch("/api/repositories/all");
-      const body = await res.json();
-      if (!res.ok) {
-        setState({ status: "error", message: body.error ?? `Request failed (${res.status})` });
-        return;
-      }
-      setState({ status: "ready", repositories: body.data });
+      const repositories = await RepositoriesAPI.findAll();
+      setState({ status: "ready", repositories });
     } catch (err: any) {
       setState({ status: "error", message: err.message });
     }
@@ -45,12 +32,7 @@ export default function RepositoriesList() {
     setSyncing(true);
     setSyncError(null);
     try {
-      const res = await apiFetch("/api/repositories/sync", { method: "POST" });
-      const body = await res.json();
-      if (!res.ok) {
-        setSyncError(body.error ?? `Sync failed (${res.status})`);
-        return;
-      }
+      await RepositoriesAPI.syncFromGithub();
       await loadRepositories();
     } catch (err: any) {
       setSyncError(err.message);

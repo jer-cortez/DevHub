@@ -1,4 +1,4 @@
-import RepositoriesList from "./RepositoriesList";
+import RepositoriesList from "@/components/Repositories/RepositoriesList";
 
 export default function RepositoriesPage() {
   return (

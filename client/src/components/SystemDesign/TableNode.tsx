@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { Handle, NodeResizer, Position, type NodeProps } from "@xyflow/react";
 import AddTableDialog from "./AddTableDialog";
-import { useBoardActions } from "./board-context";
+import { useBoardActions } from "@/contexts/BoardActionsContext";
 
 // Every handle is type="source" — combined with connectionMode="loose" on
 // <ReactFlow> (set in BoardCanvas.tsx), this lets a connection be dragged

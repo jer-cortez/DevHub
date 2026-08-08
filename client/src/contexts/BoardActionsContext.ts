@@ -1,5 +1,5 @@
 import { createContext, useContext } from "react";
-import type { TableStyle } from "./AddTableDialog";
+import type { TableStyle } from "@/components/SystemDesign/AddTableDialog";
 
 /**
  * TableNode is a separate component instance per node and doesn't have

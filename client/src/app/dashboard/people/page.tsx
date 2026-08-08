@@ -1,4 +1,4 @@
-import PeopleList from "./PeopleList";
+import PeopleList from "@/components/People/PeopleList";
 
 export default function PeoplePage() {
   return (
