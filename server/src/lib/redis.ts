@@ -22,3 +22,13 @@ export const BOARD_EVENTS_CHANNEL = 'board-events';
  */
 export const redisPub = new Redis(REDIS_URL);
 export const redisSub = new Redis(REDIS_URL);
+
+/**
+ * A third, separate connection dedicated to caching (GET/SET/DEL/SCAN),
+ * kept distinct from redisPub/redisSub — those two are conceptually
+ * "pub/sub only," and mixing cache traffic into either would blur that.
+ * ioredis connections are cheap, so a dedicated one for a different
+ * responsibility is simpler to reason about than one client doing three
+ * jobs.
+ */
+export const redisCache = new Redis(REDIS_URL);

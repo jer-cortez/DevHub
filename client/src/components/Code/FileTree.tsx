@@ -1,9 +1,10 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { CodeAPI, type DirEntry } from "@/API/CodeAPI";
+import useSWR from "swr";
+import { CodeAPI, codeContentsKey, type DirEntry } from "@/API/CodeAPI";
 import { FolderIcon, FileIcon, ChevronRightIcon } from "@/components/Common/icons";
 
 function sortEntries(entries: DirEntry[]): DirEntry[] {
@@ -25,8 +26,16 @@ function TreeNode({
   depth: number;
 }) {
   const [expanded, setExpanded] = useState(false);
-  const [children, setChildren] = useState<DirEntry[] | null>(null);
   const pathname = usePathname();
+
+  // Passing `null` as the key when collapsed skips the fetch entirely —
+  // this is what makes expansion "lazy": the request only fires the first
+  // time a folder is opened, and SWR caches it under this same key for
+  // every future expand/collapse of the same folder.
+  const { data: children } = useSWR(
+    entry.type === "dir" && expanded ? codeContentsKey(repoId, branch, entry.path) : null,
+    () => CodeAPI.getContents(repoId, entry.path, branch)
+  );
 
   if (entry.type === "file") {
     const isActive = pathname === `/dashboard/repositories/${repoId}/code/${entry.path}`;
@@ -46,25 +55,12 @@ function TreeNode({
     );
   }
 
-  const toggle = async () => {
-    if (!expanded && children === null) {
-      try {
-        const data = await CodeAPI.getContents(repoId, entry.path, branch);
-        if (Array.isArray(data)) {
-          setChildren(sortEntries(data));
-        }
-      } catch {
-        // Leave children null — toggle will just show nothing under this
-        // folder; user can retry by collapsing/expanding again.
-      }
-    }
-    setExpanded((e) => !e);
-  };
+  const sortedChildren = children && Array.isArray(children) ? sortEntries(children) : null;
 
   return (
     <div>
       <button
-        onClick={toggle}
+        onClick={() => setExpanded((e) => !e)}
         className="flex items-center gap-1.5 w-full text-left py-1 text-sm rounded hover:bg-neutral-100 dark:hover:bg-neutral-800"
         style={{ paddingLeft: `${depth * 14 + 4}px` }}
       >
@@ -72,9 +68,9 @@ function TreeNode({
         <FolderIcon />
         <span className="truncate">{entry.name}</span>
       </button>
-      {expanded && children && (
+      {expanded && sortedChildren && (
         <div>
-          {children.map((child) => (
+          {sortedChildren.map((child) => (
             <TreeNode key={child.path} repoId={repoId} branch={branch} entry={child} depth={depth + 1} />
           ))}
         </div>
@@ -84,16 +80,10 @@ function TreeNode({
 }
 
 export default function FileTree({ repoId, branch }: { repoId: string; branch: string }) {
-  const [entries, setEntries] = useState<DirEntry[] | null>(null);
-
-  useEffect(() => {
-    setEntries(null);
+  const { data: rootEntries } = useSWR(codeContentsKey(repoId, branch, ""), () =>
     CodeAPI.getContents(repoId, "", branch)
-      .then((data) => {
-        if (Array.isArray(data)) setEntries(sortEntries(data));
-      })
-      .catch(() => {});
-  }, [repoId, branch]);
+  );
+  const entries = rootEntries && Array.isArray(rootEntries) ? sortEntries(rootEntries) : null;
 
   if (entries === null) {
     return <p className="text-xs text-neutral-500 py-2">Loading files...</p>;

@@ -15,3 +15,5 @@ export const PullRequestsAPI = {
   syncFromGithub: (repoId: string) =>
     apiRequest<PullRequest[]>(`/api/pull-requests/sync/${repoId}`, { method: "POST" }),
 };
+
+export const pullRequestsKey = (repoId: string) => ["pull-requests", repoId] as const;

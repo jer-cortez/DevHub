@@ -33,3 +33,9 @@ export const CodeAPI = {
   getLastCommit: (repoId: string, ref: string) =>
     apiRequest<LastCommit>(`/api/code/${repoId}/last-commit?ref=${encodeURIComponent(ref)}`),
 };
+
+export const codeBranchesKey = (repoId: string) => ["code-branches", repoId] as const;
+/** Shared by CodeBrowser and FileTree — both read the same directory listing for a given repo/branch/path. */
+export const codeContentsKey = (repoId: string, branch: string, path: string) =>
+  ["code-contents", repoId, branch, path] as const;
+export const lastCommitKey = (repoId: string, branch: string) => ["last-commit", repoId, branch] as const;

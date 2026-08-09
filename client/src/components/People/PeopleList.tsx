@@ -1,38 +1,20 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
-import { OrganizationMembersAPI, type OrgMember } from "@/API/OrganizationMembersAPI";
-
-type State =
-  | { status: "loading" }
-  | { status: "error"; message: string }
-  | { status: "ready"; members: OrgMember[] };
+import { useState } from "react";
+import useSWR from "swr";
+import { OrganizationMembersAPI, orgMembersKey } from "@/API/OrganizationMembersAPI";
 
 export default function PeopleList() {
-  const [state, setState] = useState<State>({ status: "loading" });
+  const { data: members, error, isLoading, mutate } = useSWR(orgMembersKey, OrganizationMembersAPI.findAllWithUserInfo);
   const [syncing, setSyncing] = useState(false);
   const [syncError, setSyncError] = useState<string | null>(null);
-
-  const loadMembers = useCallback(async () => {
-    setState({ status: "loading" });
-    try {
-      const members = await OrganizationMembersAPI.findAllWithUserInfo();
-      setState({ status: "ready", members });
-    } catch (err: any) {
-      setState({ status: "error", message: err.message });
-    }
-  }, []);
-
-  useEffect(() => {
-    loadMembers();
-  }, [loadMembers]);
 
   const handleSync = async () => {
     setSyncing(true);
     setSyncError(null);
     try {
-      await OrganizationMembersAPI.syncFromGithub();
-      await loadMembers();
+      const members = await OrganizationMembersAPI.syncFromGithub();
+      mutate(members);
     } catch (err: any) {
       setSyncError(err.message);
     } finally {
@@ -53,21 +35,21 @@ export default function PeopleList() {
         {syncError && <p className="text-sm text-red-600 dark:text-red-400">{syncError}</p>}
       </div>
 
-      {state.status === "loading" && (
+      {isLoading && (
         <p className="text-sm text-neutral-500">Loading members...</p>
       )}
 
-      {state.status === "error" && (
-        <p className="text-sm text-red-600 dark:text-red-400">{state.message}</p>
+      {error && (
+        <p className="text-sm text-red-600 dark:text-red-400">{error.message}</p>
       )}
 
-      {state.status === "ready" && state.members.length === 0 && (
+      {members && members.length === 0 && (
         <p className="text-sm text-neutral-500">No members found. Try syncing from GitHub.</p>
       )}
 
-      {state.status === "ready" && state.members.length > 0 && (
+      {members && members.length > 0 && (
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-          {state.members.map((member) => (
+          {members.map((member) => (
             <div
               key={member.id}
               className="flex items-center gap-3 rounded-lg border border-neutral-200 dark:border-neutral-800 p-4"

@@ -2,8 +2,9 @@
 
 import { useEffect, useState, type ReactNode } from "react";
 import { useParams } from "next/navigation";
-import { CodeAPI } from "@/API/CodeAPI";
-import { RepositoriesAPI } from "@/API/RepositoriesAPI";
+import useSWR from "swr";
+import { CodeAPI, codeBranchesKey } from "@/API/CodeAPI";
+import { RepositoriesAPI, repositoryKey } from "@/API/RepositoriesAPI";
 import { CodeBranchContext } from "@/contexts/CodeBranchContext";
 import { PanelIcon } from "@/components/Common/icons";
 import FileTree from "./FileTree";
@@ -12,19 +13,19 @@ export default function CodeLayout({ children }: { children: ReactNode }) {
   // `path` comes through here too, via useParams — Next.js merges params
   // from the whole matched route, not just the leaf page.
   const { id, path } = useParams<{ id: string; path?: string[] }>();
-  const [branches, setBranches] = useState<string[]>([]);
-  const [branch, setBranch] = useState("");
   const [sidebarOpen, setSidebarOpen] = useState(true);
   const atRoot = !path || path.length === 0;
 
   // Lives here rather than in the per-path page below, so it survives
   // navigating between files instead of resetting on every click — this
   // layout isn't remounted by that navigation, only its `children` are.
+  const { data: branches = [] } = useSWR(codeBranchesKey(id), () => CodeAPI.getBranches(id));
+  const { data: repo } = useSWR(repositoryKey(id), () => RepositoriesAPI.findById(id));
+
+  const [branch, setBranch] = useState("");
   useEffect(() => {
-    setBranch("");
-    CodeAPI.getBranches(id).then(setBranches).catch(() => {});
-    RepositoriesAPI.findById(id).then((repo) => setBranch(repo.default_branch)).catch(() => {});
-  }, [id]);
+    if (repo) setBranch(repo.default_branch);
+  }, [repo]);
 
   return (
     <CodeBranchContext.Provider value={{ branch, setBranch, branches }}>

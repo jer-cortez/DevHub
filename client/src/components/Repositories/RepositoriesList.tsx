@@ -1,39 +1,21 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useState } from "react";
 import Link from "next/link";
-import { RepositoriesAPI, type Repository } from "@/API/RepositoriesAPI";
-
-type State =
-  | { status: "loading" }
-  | { status: "error"; message: string }
-  | { status: "ready"; repositories: Repository[] };
+import useSWR from "swr";
+import { RepositoriesAPI, repositoriesKey } from "@/API/RepositoriesAPI";
 
 export default function RepositoriesList() {
-  const [state, setState] = useState<State>({ status: "loading" });
+  const { data: repositories, error, isLoading, mutate } = useSWR(repositoriesKey, RepositoriesAPI.findAll);
   const [syncing, setSyncing] = useState(false);
   const [syncError, setSyncError] = useState<string | null>(null);
-
-  const loadRepositories = useCallback(async () => {
-    setState({ status: "loading" });
-    try {
-      const repositories = await RepositoriesAPI.findAll();
-      setState({ status: "ready", repositories });
-    } catch (err: any) {
-      setState({ status: "error", message: err.message });
-    }
-  }, []);
-
-  useEffect(() => {
-    loadRepositories();
-  }, [loadRepositories]);
 
   const handleSync = async () => {
     setSyncing(true);
     setSyncError(null);
     try {
-      await RepositoriesAPI.syncFromGithub();
-      await loadRepositories();
+      const repositories = await RepositoriesAPI.syncFromGithub();
+      mutate(repositories);
     } catch (err: any) {
       setSyncError(err.message);
     } finally {
@@ -54,21 +36,21 @@ export default function RepositoriesList() {
         {syncError && <p className="text-sm text-red-600 dark:text-red-400">{syncError}</p>}
       </div>
 
-      {state.status === "loading" && (
+      {isLoading && (
         <p className="text-sm text-neutral-500">Loading repositories...</p>
       )}
 
-      {state.status === "error" && (
-        <p className="text-sm text-red-600 dark:text-red-400">{state.message}</p>
+      {error && (
+        <p className="text-sm text-red-600 dark:text-red-400">{error.message}</p>
       )}
 
-      {state.status === "ready" && state.repositories.length === 0 && (
+      {repositories && repositories.length === 0 && (
         <p className="text-sm text-neutral-500">No repositories found. Try syncing from GitHub.</p>
       )}
 
-      {state.status === "ready" && state.repositories.length > 0 && (
+      {repositories && repositories.length > 0 && (
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-          {state.repositories.map((repo) => (
+          {repositories.map((repo) => (
             <Link
               key={repo.id}
               href={`/dashboard/repositories/${repo.id}/pull-requests`}

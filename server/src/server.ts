@@ -1,5 +1,6 @@
 import express from 'express';
 import cors from 'cors';
+import compression from 'compression';
 import { usersRouter } from './gateway/routes/users.routes';
 import { pullRequestRouter } from './gateway/routes/pullRequest.routes';
 import { repositoriesRouter } from './gateway/routes/repositories.routes';
@@ -28,6 +29,11 @@ const PORT = 8080;
 const server = http.createServer(app)
 
 app.use(cors());
+// Compresses response bodies (gzip) above the default 1kb threshold — pure
+// win for anything returning a real payload (repo listings, code contents,
+// PR lists), and doesn't touch incoming request bodies, so it's safe to
+// apply globally, including in front of the webhook route below.
+app.use(compression());
 
 // Mounted before express.json() and AuthMiddleware, deliberately:
 // - GitHub is not a Supabase-authenticated user, so this can't sit behind

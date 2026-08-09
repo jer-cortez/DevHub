@@ -1,14 +1,10 @@
 "use client";
 
-import { useCallback, useEffect, useRef, useState } from "react";
-import { PullRequestsAPI, type PullRequest } from "@/API/PullRequestsAPI";
-import { ReviewCommentsAPI } from "@/API/ReviewCommentsAPI";
+import { useCallback, useState } from "react";
+import useSWR from "swr";
+import { PullRequestsAPI, pullRequestsKey } from "@/API/PullRequestsAPI";
+import { ReviewCommentsAPI, reviewCommentCountsKey } from "@/API/ReviewCommentsAPI";
 import { useRepoEvents, type RepoEvent } from "@/hooks/useRepoEvents";
-
-type State =
-  | { status: "loading" }
-  | { status: "error"; message: string }
-  | { status: "ready"; pullRequests: PullRequest[] };
 
 const STATUS_STYLES: Record<string, string> = {
   open: "bg-emerald-100 text-emerald-800 dark:bg-emerald-900/40 dark:text-emerald-300",
@@ -17,49 +13,38 @@ const STATUS_STYLES: Record<string, string> = {
 };
 
 export default function PullRequestsList({ repoId }: { repoId: string }) {
-  const [state, setState] = useState<State>({ status: "loading" });
+  const {
+    data: pullRequests,
+    error,
+    isLoading,
+    mutate: mutatePullRequests,
+  } = useSWR(pullRequestsKey(repoId), () => PullRequestsAPI.findByRepoId(repoId));
   const [syncing, setSyncing] = useState(false);
   const [syncError, setSyncError] = useState<string | null>(null);
-  const [commentCounts, setCommentCounts] = useState<Record<string, number>>({});
 
-  const loadPullRequests = useCallback(async () => {
-    setState({ status: "loading" });
-    try {
-      const pullRequests = await PullRequestsAPI.findByRepoId(repoId);
-      setState({ status: "ready", pullRequests });
+  const prIds = pullRequests?.map((pr) => pr.id) ?? [];
+  const {
+    data: commentCounts = {},
+    mutate: mutateCommentCounts,
+  } = useSWR(reviewCommentCountsKey(prIds), () => ReviewCommentsAPI.countsByPrIds(prIds));
 
-      // Fetch initial comment counts in one request, rather than one per PR.
-      if (pullRequests.length > 0) {
-        const counts = await ReviewCommentsAPI.countsByPrIds(pullRequests.map((pr) => pr.id));
-        setCommentCounts(counts);
+  const handleRepoEvent = useCallback(
+    (event: RepoEvent) => {
+      if (event.type === "pull_request") {
+        mutatePullRequests();
+      } else if (event.type === "comment") {
+        const comment = event.data as { pr_id: string };
+        mutateCommentCounts(
+          (prev) => ({
+            ...prev,
+            [comment.pr_id]: (prev?.[comment.pr_id] ?? 0) + 1,
+          }),
+          { revalidate: false }
+        );
       }
-    } catch (err: any) {
-      setState({ status: "error", message: err.message });
-    }
-  }, [repoId]);
-
-  useEffect(() => {
-    loadPullRequests();
-  }, [loadPullRequests]);
-
-  // useRepoEvents re-subscribes whenever this callback identity changes, so
-  // it's kept stable via a ref rather than depending on `loadPullRequests`
-  // (which itself changes identity on every repoId change already handled
-  // by useRepoEvents's own dependency on repoId).
-  const loadPullRequestsRef = useRef(loadPullRequests);
-  loadPullRequestsRef.current = loadPullRequests;
-
-  const handleRepoEvent = useCallback((event: RepoEvent) => {
-    if (event.type === "pull_request") {
-      loadPullRequestsRef.current();
-    } else if (event.type === "comment") {
-      const comment = event.data as { pr_id: string };
-      setCommentCounts((prev) => ({
-        ...prev,
-        [comment.pr_id]: (prev[comment.pr_id] ?? 0) + 1,
-      }));
-    }
-  }, []);
+    },
+    [mutatePullRequests, mutateCommentCounts]
+  );
 
   useRepoEvents(repoId, handleRepoEvent);
 
@@ -67,8 +52,8 @@ export default function PullRequestsList({ repoId }: { repoId: string }) {
     setSyncing(true);
     setSyncError(null);
     try {
-      await PullRequestsAPI.syncFromGithub(repoId);
-      await loadPullRequests();
+      const pullRequests = await PullRequestsAPI.syncFromGithub(repoId);
+      mutatePullRequests(pullRequests);
     } catch (err: any) {
       setSyncError(err.message);
     } finally {
@@ -89,21 +74,21 @@ export default function PullRequestsList({ repoId }: { repoId: string }) {
         {syncError && <p className="text-sm text-red-600 dark:text-red-400">{syncError}</p>}
       </div>
 
-      {state.status === "loading" && (
+      {isLoading && (
         <p className="text-sm text-neutral-500">Loading pull requests...</p>
       )}
 
-      {state.status === "error" && (
-        <p className="text-sm text-red-600 dark:text-red-400">{state.message}</p>
+      {error && (
+        <p className="text-sm text-red-600 dark:text-red-400">{error.message}</p>
       )}
 
-      {state.status === "ready" && state.pullRequests.length === 0 && (
+      {pullRequests && pullRequests.length === 0 && (
         <p className="text-sm text-neutral-500">No pull requests found. Try syncing from GitHub.</p>
       )}
 
-      {state.status === "ready" && state.pullRequests.length > 0 && (
+      {pullRequests && pullRequests.length > 0 && (
         <div className="space-y-2">
-          {state.pullRequests.map((pr) => (
+          {pullRequests.map((pr) => (
             <a
               key={pr.id}
               href={pr.github_url}

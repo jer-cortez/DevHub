@@ -1,31 +1,17 @@
 "use client";
 
-import { useEffect, useState } from "react";
 import Link from "next/link";
-import { OrganizationsAPI, type Organization } from "@/API/OrganizationsAPI";
-import { RepositoriesAPI, type Repository } from "@/API/RepositoriesAPI";
-import { OrganizationMembersAPI } from "@/API/OrganizationMembersAPI";
+import useSWR from "swr";
+import { OrganizationsAPI, organizationsKey } from "@/API/OrganizationsAPI";
+import { RepositoriesAPI, repositoriesKey } from "@/API/RepositoriesAPI";
+import { OrganizationMembersAPI, orgMembersKey } from "@/API/OrganizationMembersAPI";
 
 export default function OverviewContent() {
-  const [org, setOrg] = useState<Organization | null>(null);
-  const [repositories, setRepositories] = useState<Repository[]>([]);
-  const [memberCount, setMemberCount] = useState<number | null>(null);
-
-  useEffect(() => {
-    OrganizationsAPI.findAll()
-      .then((orgs) => {
-        if (orgs.length > 0) setOrg(orgs[0]);
-      })
-      .catch(() => {});
-
-    RepositoriesAPI.findAll()
-      .then(setRepositories)
-      .catch(() => {});
-
-    OrganizationMembersAPI.findAllWithUserInfo()
-      .then((members) => setMemberCount(members.length))
-      .catch(() => {});
-  }, []);
+  const { data: orgs } = useSWR(organizationsKey, OrganizationsAPI.findAll);
+  const org = orgs?.[0] ?? null;
+  const { data: repositories = [] } = useSWR(repositoriesKey, RepositoriesAPI.findAll);
+  const { data: members } = useSWR(orgMembersKey, OrganizationMembersAPI.findAllWithUserInfo);
+  const memberCount = members?.length ?? null;
 
   const popularRepositories = repositories.slice(0, 6);
 

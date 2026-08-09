@@ -2,19 +2,14 @@
 
 import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
+import useSWR from "swr";
 import { Prism as SyntaxHighlighter } from "react-syntax-highlighter";
 import { vs, vscDarkPlus } from "react-syntax-highlighter/dist/esm/styles/prism";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
-import { CodeAPI, type DirEntry, type LastCommit } from "@/API/CodeAPI";
+import { CodeAPI, codeContentsKey, lastCommitKey } from "@/API/CodeAPI";
 import { FolderIcon, FileIcon, BranchIcon, ChevronDownIcon } from "@/components/Common/icons";
 import { useCodeBranch } from "@/contexts/CodeBranchContext";
-
-type State =
-  | { status: "loading" }
-  | { status: "error"; message: string }
-  | { status: "dir"; entries: DirEntry[] }
-  | { status: "file"; file: { type: "file"; name: string; path: string; size: number; content: string } };
 
 const EXTENSION_LANGUAGE_MAP: Record<string, string> = {
   ts: "typescript",
@@ -112,9 +107,6 @@ function CopyButton({ content }: { content: string }) {
 
 export default function CodeBrowser({ repoId, path }: { repoId: string; path: string }) {
   const { branch, setBranch, branches } = useCodeBranch();
-  const [state, setState] = useState<State>({ status: "loading" });
-  const [lastCommit, setLastCommit] = useState<LastCommit | null>(null);
-  const [readme, setReadme] = useState<string | null>(null);
   const [filterQuery, setFilterQuery] = useState("");
   const filterInputRef = useRef<HTMLInputElement>(null);
   const isDark = usePrefersDark();
@@ -134,51 +126,44 @@ export default function CodeBrowser({ repoId, path }: { repoId: string; path: st
     return () => window.removeEventListener("keydown", handler);
   }, []);
 
+  useEffect(() => {
+    setFilterQuery("");
+  }, [path]);
+
   // Repo-level latest commit only (not per-file — see code.services.ts's
   // getLastCommit comment for why), re-fetched when the branch changes.
-  useEffect(() => {
-    if (!branch) return;
-    CodeAPI.getLastCommit(repoId, branch)
-      .then(setLastCommit)
-      .catch(() => {});
-  }, [repoId, branch]);
+  const { data: lastCommit = null } = useSWR(
+    branch ? lastCommitKey(repoId, branch) : null,
+    () => CodeAPI.getLastCommit(repoId, branch)
+  );
 
-  useEffect(() => {
-    if (!branch) return;
-    setState({ status: "loading" });
-    setFilterQuery("");
-    CodeAPI.getContents(repoId, path, branch)
-      .then((data) => {
-        if (Array.isArray(data)) {
-          const entries = [...data].sort((a, b) => {
-            if (a.type !== b.type) return a.type === "dir" ? -1 : 1;
-            return a.name.localeCompare(b.name);
-          });
-          setState({ status: "dir", entries });
-        } else {
-          setState({ status: "file", file: data });
-        }
-      })
-      .catch((err) => setState({ status: "error", message: err.message }));
-  }, [repoId, path, branch]);
+  const {
+    data: contents,
+    error: contentsError,
+    isLoading: contentsLoading,
+  } = useSWR(branch ? codeContentsKey(repoId, branch, path) : null, () => CodeAPI.getContents(repoId, path, branch));
 
   // README rendering is scoped to the repo root only (not per-directory —
   // keeps this simple, matches the common case).
-  useEffect(() => {
-    if (!branch || path) {
-      setReadme(null);
-      return;
-    }
-    CodeAPI.getContents(repoId, "README.md", branch)
-      .then((data) => setReadme("content" in data ? data.content : null))
-      .catch(() => setReadme(null));
-  }, [repoId, path, branch]);
+  const { data: readmeFile } = useSWR(
+    branch && !path ? codeContentsKey(repoId, branch, "README.md") : null,
+    () => CodeAPI.getContents(repoId, "README.md", branch)
+  );
+  const readme = readmeFile && "content" in readmeFile ? readmeFile.content : null;
+
+  const entries =
+    contents && Array.isArray(contents)
+      ? [...contents].sort((a, b) => {
+          if (a.type !== b.type) return a.type === "dir" ? -1 : 1;
+          return a.name.localeCompare(b.name);
+        })
+      : null;
+  const file = contents && !Array.isArray(contents) ? contents : null;
 
   const segments = path ? path.split("/") : [];
-  const visibleEntries =
-    state.status === "dir"
-      ? state.entries.filter((entry) => entry.name.toLowerCase().includes(filterQuery.toLowerCase()))
-      : [];
+  const visibleEntries = entries
+    ? entries.filter((entry) => entry.name.toLowerCase().includes(filterQuery.toLowerCase()))
+    : [];
 
   return (
     <div className="space-y-3">
@@ -236,7 +221,7 @@ export default function CodeBrowser({ repoId, path }: { repoId: string; path: st
         )}
       </div>
 
-      {state.status === "dir" && (
+      {entries && (
         <div className="relative max-w-md">
           <input
             ref={filterInputRef}
@@ -251,15 +236,15 @@ export default function CodeBrowser({ repoId, path }: { repoId: string; path: st
         </div>
       )}
 
-      {state.status === "loading" && (
+      {contentsLoading && (
         <p className="text-sm text-neutral-500">Loading...</p>
       )}
 
-      {state.status === "error" && (
-        <p className="text-sm text-red-600 dark:text-red-400">{state.message}</p>
+      {contentsError && (
+        <p className="text-sm text-red-600 dark:text-red-400">{contentsError.message}</p>
       )}
 
-      {state.status === "dir" && (
+      {entries && (
         <>
           <div className="rounded-md border border-neutral-200 dark:border-neutral-800 overflow-hidden">
             {lastCommit && (
@@ -283,7 +268,7 @@ export default function CodeBrowser({ repoId, path }: { repoId: string; path: st
 
             {visibleEntries.length === 0 && (
               <p className="p-4 text-sm text-neutral-500">
-                {state.entries.length === 0 ? "This folder is empty." : "No files match your search."}
+                {entries.length === 0 ? "This folder is empty." : "No files match your search."}
               </p>
             )}
             {visibleEntries.map((entry, i) => (
@@ -334,16 +319,16 @@ export default function CodeBrowser({ repoId, path }: { repoId: string; path: st
         </>
       )}
 
-      {state.status === "file" && (
+      {file && (
         <div className="rounded-md border border-neutral-200 dark:border-neutral-800 overflow-hidden">
           <div className="flex items-center justify-between px-4 py-2 bg-neutral-50 dark:bg-neutral-900 border-b border-neutral-200 dark:border-neutral-800">
             <span className="text-xs text-neutral-500 dark:text-neutral-400">
-              {state.file.content.split("\n").length} lines · {formatBytes(state.file.size)}
+              {file.content.split("\n").length} lines · {formatBytes(file.size)}
             </span>
-            <CopyButton content={state.file.content} />
+            <CopyButton content={file.content} />
           </div>
           <SyntaxHighlighter
-            language={guessLanguage(state.file.name)}
+            language={guessLanguage(file.name)}
             style={isDark ? vscDarkPlus : vs}
             customStyle={{
               margin: 0,
@@ -353,7 +338,7 @@ export default function CodeBrowser({ repoId, path }: { repoId: string; path: st
             lineNumberStyle={{ opacity: 0.4, minWidth: "2.5em" }}
             showLineNumbers
           >
-            {state.file.content}
+            {file.content}
           </SyntaxHighlighter>
         </div>
       )}

@@ -24,3 +24,5 @@ export const DrawingBoardsAPI = {
       body: JSON.stringify(payload),
     }),
 };
+
+export const drawingBoardsKey = (repoId: string) => ["drawing-boards", repoId] as const;

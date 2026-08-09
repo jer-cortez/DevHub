@@ -14,3 +14,5 @@ export const OrganizationMembersAPI = {
   findAllWithUserInfo: () => apiRequest<OrgMember[]>("/api/org-members/members"),
   syncFromGithub: () => apiRequest<OrgMember[]>("/api/org-members/sync", { method: "POST" }),
 };
+
+export const orgMembersKey = "org-members" as const;

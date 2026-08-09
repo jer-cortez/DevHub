@@ -1,14 +1,14 @@
 "use client";
 
 import type { ReactNode } from "react";
-import { useEffect, useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import useSWR from "swr";
 import SignOutButton from "@/components/Common/SignOutButton";
 import { ChevronDownIcon } from "@/components/Common/icons";
-import { OrganizationsAPI, type Organization } from "@/API/OrganizationsAPI";
-import { RepositoriesAPI } from "@/API/RepositoriesAPI";
-import { OrganizationMembersAPI } from "@/API/OrganizationMembersAPI";
+import { OrganizationsAPI, organizationsKey } from "@/API/OrganizationsAPI";
+import { RepositoriesAPI, repositoriesKey, repositoryKey } from "@/API/RepositoriesAPI";
+import { OrganizationMembersAPI, orgMembersKey } from "@/API/OrganizationMembersAPI";
 
 type CountKey = "repositories" | "people";
 
@@ -83,9 +83,6 @@ export default function DashboardShell({
   children: ReactNode;
 }) {
   const pathname = usePathname();
-  const [counts, setCounts] = useState<Partial<Record<CountKey, number>>>({});
-  const [org, setOrg] = useState<Organization | null>(null);
-  const [repoName, setRepoName] = useState("");
 
   // When the URL is /dashboard/repositories/<id>/..., that <id> puts the
   // shell into "repo context": the org tab row and org counts are replaced
@@ -93,34 +90,19 @@ export default function DashboardShell({
   // shows "orgname / reponame" instead of just "orgname".
   const repoId = pathname?.match(/^\/dashboard\/repositories\/([^/]+)(\/|$)/)?.[1];
 
-  useEffect(() => {
-    OrganizationsAPI.findAll()
-      .then((orgs) => {
-        if (orgs.length > 0) setOrg(orgs[0]);
-      })
-      .catch(() => {});
-  }, []);
+  const { data: orgs } = useSWR(organizationsKey, OrganizationsAPI.findAll);
+  const org = orgs?.[0] ?? null;
 
-  useEffect(() => {
-    if (!repoId) {
-      setRepoName("");
-      return;
-    }
-    RepositoriesAPI.findById(repoId)
-      .then((repo) => setRepoName(repo.name))
-      .catch(() => {});
-  }, [repoId]);
+  const { data: repo } = useSWR(repoId ? repositoryKey(repoId) : null, () => RepositoriesAPI.findById(repoId!));
+  const repoName = repo?.name ?? "";
 
-  useEffect(() => {
-    if (repoId) return; // org-level counts aren't shown while in repo context
-    RepositoriesAPI.findAll()
-      .then((repos) => setCounts((c) => ({ ...c, repositories: repos.length })))
-      .catch(() => {});
-
-    OrganizationMembersAPI.findAllWithUserInfo()
-      .then((members) => setCounts((c) => ({ ...c, people: members.length })))
-      .catch(() => {});
-  }, [repoId]);
+  // org-level counts aren't shown while in repo context
+  const { data: repositories } = useSWR(repoId ? null : repositoriesKey, RepositoriesAPI.findAll);
+  const { data: members } = useSWR(repoId ? null : orgMembersKey, OrganizationMembersAPI.findAllWithUserInfo);
+  const counts: Partial<Record<CountKey, number>> = {
+    repositories: repositories?.length,
+    people: members?.length,
+  };
 
   const isActiveOrgTab = (href: string) => (href === "/dashboard" ? pathname === "/dashboard" : pathname?.startsWith(href));
   const isActiveRepoTab = (segment: string) => pathname?.includes(`/${segment}`);

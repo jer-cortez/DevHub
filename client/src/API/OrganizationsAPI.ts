@@ -9,3 +9,5 @@ export interface Organization {
 export const OrganizationsAPI = {
   findAll: () => apiRequest<Organization[]>("/api/organizations/all"),
 };
+
+export const organizationsKey = "organizations" as const;

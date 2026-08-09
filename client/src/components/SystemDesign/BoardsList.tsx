@@ -1,32 +1,19 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useState } from "react";
 import Link from "next/link";
-import { DrawingBoardsAPI, type Board } from "@/API/DrawingBoardsAPI";
-
-type State =
-  | { status: "loading" }
-  | { status: "error"; message: string }
-  | { status: "ready"; boards: Board[] };
+import useSWR from "swr";
+import { DrawingBoardsAPI, drawingBoardsKey } from "@/API/DrawingBoardsAPI";
 
 export default function BoardsList({ repoId }: { repoId: string }) {
-  const [state, setState] = useState<State>({ status: "loading" });
+  const {
+    data: boards,
+    error,
+    isLoading,
+    mutate,
+  } = useSWR(drawingBoardsKey(repoId), () => DrawingBoardsAPI.findByRepoId(repoId));
   const [creating, setCreating] = useState(false);
   const [createError, setCreateError] = useState<string | null>(null);
-
-  const loadBoards = useCallback(async () => {
-    setState({ status: "loading" });
-    try {
-      const boards = await DrawingBoardsAPI.findByRepoId(repoId);
-      setState({ status: "ready", boards });
-    } catch (err: any) {
-      setState({ status: "error", message: err.message });
-    }
-  }, [repoId]);
-
-  useEffect(() => {
-    loadBoards();
-  }, [loadBoards]);
 
   const handleCreate = async () => {
     const title = window.prompt("Board title", "New Board");
@@ -42,7 +29,7 @@ export default function BoardsList({ repoId }: { repoId: string }) {
         nodes: [],
         edges: [],
       });
-      await loadBoards();
+      mutate();
     } catch (err: any) {
       setCreateError(err.message);
     } finally {
@@ -63,21 +50,21 @@ export default function BoardsList({ repoId }: { repoId: string }) {
         {createError && <p className="text-sm text-red-600 dark:text-red-400">{createError}</p>}
       </div>
 
-      {state.status === "loading" && (
+      {isLoading && (
         <p className="text-sm text-neutral-500">Loading boards...</p>
       )}
 
-      {state.status === "error" && (
-        <p className="text-sm text-red-600 dark:text-red-400">{state.message}</p>
+      {error && (
+        <p className="text-sm text-red-600 dark:text-red-400">{error.message}</p>
       )}
 
-      {state.status === "ready" && state.boards.length === 0 && (
+      {boards && boards.length === 0 && (
         <p className="text-sm text-neutral-500">No boards yet. Create one to start diagramming.</p>
       )}
 
-      {state.status === "ready" && state.boards.length > 0 && (
+      {boards && boards.length > 0 && (
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-          {state.boards.map((board) => (
+          {boards.map((board) => (
             <Link
               key={board.id}
               href={`/dashboard/repositories/${repoId}/system-design/${board.id}`}
