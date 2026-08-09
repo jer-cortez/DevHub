@@ -38,4 +38,7 @@ create index if not exists pull_request_summary_stale_idx
   on public.pull_request (repo_id)
   where summary_sha is null or summary_sha is distinct from head_sha;
 
+insert into public.schema_migrations (version, name) values ('002', 'pr_summaries')
+  on conflict (version) do nothing;
+
 commit;

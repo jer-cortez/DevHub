@@ -50,4 +50,7 @@ create index if not exists pr_dependencies_blocking_idx
 -- keeps Supabase's auto-generated REST API from exposing the table.
 alter table public.pr_dependencies enable row level security;
 
+insert into public.schema_migrations (version, name) values ('004', 'pr_dependencies')
+  on conflict (version) do nothing;
+
 commit;

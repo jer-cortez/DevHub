@@ -105,4 +105,7 @@ alter table public.review_comments
   add constraint review_comments_pr_xor_issue
   check ((pr_id is null) <> (issue_id is null));
 
+insert into public.schema_migrations (version, name) values ('001', 'teams_notifications_issues')
+  on conflict (version) do nothing;
+
 commit;

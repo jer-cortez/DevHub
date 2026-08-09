@@ -55,4 +55,7 @@ create index if not exists reviews_pr_submitted_idx
 create index if not exists review_comments_pr_created_idx
   on public.review_comments (pr_id, created_at desc);
 
+insert into public.schema_migrations (version, name) values ('003', 'org_health')
+  on conflict (version) do nothing;
+
 commit;

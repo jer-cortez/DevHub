@@ -38,32 +38,109 @@ function StatTile({
   );
 }
 
+type Tone = "neutral" | "warn" | "bad";
+
+function ClockIcon() {
+  return (
+    <svg viewBox="0 0 16 16" width="16" height="16" className="fill-current">
+      <path d="M8 1.5a6.5 6.5 0 1 0 0 13 6.5 6.5 0 0 0 0-13ZM0 8a8 8 0 1 1 16 0A8 8 0 0 1 0 8Zm8.75-4.25v4.19l2.68 1.55a.75.75 0 0 1-.75 1.3l-3.05-1.77A.75.75 0 0 1 7.25 8.3V3.75a.75.75 0 0 1 1.5 0Z" />
+    </svg>
+  );
+}
+
+function BlockedIcon() {
+  return (
+    <svg viewBox="0 0 16 16" width="16" height="16" className="fill-current">
+      <path d="M8 0a8 8 0 1 1 0 16A8 8 0 0 1 8 0Zm0 1.5a6.5 6.5 0 0 0-5.02 10.61l9.13-9.13A6.47 6.47 0 0 0 8 1.5Zm5.02 2.39-9.13 9.13A6.5 6.5 0 0 0 13.02 3.89Z" />
+    </svg>
+  );
+}
+
+function PeopleIcon() {
+  return (
+    <svg viewBox="0 0 16 16" width="16" height="16" className="fill-current">
+      <path d="M5.5 3.5a2 2 0 1 1 0 4 2 2 0 0 1 0-4Zm0 5.5c-2 0-4 1-4 2.5V13h8v-1.5C9.5 10 7.5 9 5.5 9Zm5.75-5.5a2 2 0 1 1 0 4 2 2 0 0 1 0-4Zm0 5.5c-.4 0-.8.04-1.16.12.86.6 1.41 1.4 1.41 2.38V13h3.5v-1.5c0-1.5-1.75-2.5-3.75-2.5Z" />
+    </svg>
+  );
+}
+
+function RepoIcon() {
+  return (
+    <svg viewBox="0 0 16 16" width="16" height="16" className="fill-current">
+      <path d="M2 2.5A2.5 2.5 0 0 1 4.5 0h8.75a.75.75 0 0 1 .75.75v12.5a.75.75 0 0 1-.75.75h-2.5a.75.75 0 0 1 0-1.5h1.75v-2h-8a1 1 0 0 0-.714 1.7.75.75 0 1 1-1.072 1.05A2.495 2.495 0 0 1 2 11.5Zm10.5-1h-8a1 1 0 0 0-1 1v6.708A2.486 2.486 0 0 1 4.5 9h8ZM5 12.25a.25.25 0 0 1 .25-.25h3.5a.25.25 0 0 1 .25.25v3.25a.25.25 0 0 1-.4.2l-1.45-1.087a.25.25 0 0 0-.3 0L5.4 15.7a.25.25 0 0 1-.4-.2Z" />
+    </svg>
+  );
+}
+
+/**
+ * Header styling per tone. The header only takes on colour when the section
+ * actually has something wrong in it, so scanning the page top to bottom, the
+ * tinted headers *are* the summary — a healthy org reads as calm.
+ */
+const SECTION_TONES: Record<Tone, { header: string; icon: string; badge: string }> = {
+  neutral: {
+    header: "bg-neutral-50 dark:bg-neutral-900/60 border-neutral-200 dark:border-neutral-800",
+    icon: "bg-neutral-200 text-neutral-600 dark:bg-neutral-800 dark:text-neutral-300",
+    badge: "bg-neutral-200 text-neutral-700 dark:bg-neutral-800 dark:text-neutral-300",
+  },
+  warn: {
+    header: "bg-amber-50 dark:bg-amber-950/30 border-amber-200 dark:border-amber-900",
+    icon: "bg-amber-200 text-amber-800 dark:bg-amber-900/60 dark:text-amber-300",
+    badge: "bg-amber-200 text-amber-900 dark:bg-amber-900/60 dark:text-amber-200",
+  },
+  bad: {
+    header: "bg-red-50 dark:bg-red-950/30 border-red-200 dark:border-red-900",
+    icon: "bg-red-200 text-red-800 dark:bg-red-900/60 dark:text-red-300",
+    badge: "bg-red-200 text-red-900 dark:bg-red-900/60 dark:text-red-200",
+  },
+};
+
 function Section({
   title,
   description,
+  icon,
+  badge,
+  tone = "neutral",
   isEmpty,
   emptyMessage,
   children,
 }: {
   title: string;
   description: string;
+  icon: React.ReactNode;
+  /** Short status, e.g. "3 stale" — says what the number means without reading the rows. */
+  badge: string;
+  tone?: Tone;
   isEmpty: boolean;
   emptyMessage: string;
   children: React.ReactNode;
 }) {
+  const styles = SECTION_TONES[tone];
+
   return (
-    <section className="space-y-3">
-      <div>
-        <h2 className="text-sm font-semibold">{title}</h2>
-        <p className="text-xs text-neutral-500 dark:text-neutral-400">{description}</p>
+    <section className="rounded-lg border border-neutral-200 dark:border-neutral-800 overflow-hidden">
+      <header className={`flex items-start gap-3 px-4 py-3 border-b ${styles.header}`}>
+        <span className={`shrink-0 rounded-md p-1.5 mt-0.5 ${styles.icon}`}>{icon}</span>
+        <div className="min-w-0 flex-1">
+          <div className="flex items-center justify-between gap-3">
+            <h2 className="text-base font-semibold">{title}</h2>
+            <span
+              className={`shrink-0 text-xs font-medium rounded-full px-2 py-0.5 ${styles.badge}`}
+            >
+              {badge}
+            </span>
+          </div>
+          <p className="text-xs text-neutral-600 dark:text-neutral-400 mt-0.5">{description}</p>
+        </div>
+      </header>
+
+      <div className="px-4 py-3">
+        {isEmpty ? (
+          <p className="text-sm text-neutral-500 dark:text-neutral-400">{emptyMessage}</p>
+        ) : (
+          children
+        )}
       </div>
-      {isEmpty ? (
-        <p className="text-sm text-neutral-500 dark:text-neutral-400 rounded-lg border border-dashed border-neutral-200 dark:border-neutral-800 p-4">
-          {emptyMessage}
-        </p>
-      ) : (
-        children
-      )}
     </section>
   );
 }
@@ -81,6 +158,14 @@ export default function OrgHealthContent() {
 
   return (
     <div className="space-y-8">
+      <div>
+        <h1 className="text-xl font-semibold">Org health</h1>
+        <p className="text-sm text-neutral-500 dark:text-neutral-400 mt-1">
+          Where review is getting stuck across every repository. Section headers turn amber or red
+          when that section has something needing attention, so a calm page means a healthy org.
+        </p>
+      </div>
+
       <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-7 gap-3">
         <StatTile label="Open PRs" value={summary.openPrs} />
         <StatTile
@@ -123,10 +208,13 @@ export default function OrgHealthContent() {
       <Section
         title="Stale pull requests"
         description={`Open PRs with no review, comment, or update in over ${thresholds.stalePrDays} days — oldest first.`}
+        icon={<ClockIcon />}
+        badge={stalePrs.length === 0 ? "all current" : `${stalePrs.length} stale`}
+        tone={stalePrs.length > 0 ? "bad" : "neutral"}
         isEmpty={stalePrs.length === 0}
         emptyMessage="Nothing stale. Every open PR has had activity recently."
       >
-        <div className="divide-y divide-neutral-200 dark:divide-neutral-800 border-t border-neutral-200 dark:border-neutral-800">
+        <div className="divide-y divide-neutral-200 dark:divide-neutral-800">
           {stalePrs.map((pr) => (
             <div key={pr.id} className="flex items-center justify-between gap-4 py-3">
               <div className="min-w-0">
@@ -156,10 +244,13 @@ export default function OrgHealthContent() {
       <Section
         title="Blocked pull requests"
         description="Open PRs waiting on another PR to merge — most blockers first. These are ready work that can't move."
+        icon={<BlockedIcon />}
+        badge={blockedPrs.length === 0 ? "none blocked" : `${blockedPrs.length} blocked`}
+        tone={blockedPrs.length > 0 ? "warn" : "neutral"}
         isEmpty={blockedPrs.length === 0}
         emptyMessage="Nothing blocked. No open PR is waiting on another to merge."
       >
-        <div className="divide-y divide-neutral-200 dark:divide-neutral-800 border-t border-neutral-200 dark:border-neutral-800">
+        <div className="divide-y divide-neutral-200 dark:divide-neutral-800">
           {blockedPrs.map((pr) => (
             <div key={pr.id} className="py-3">
               <div className="flex items-center justify-between gap-4">
@@ -218,10 +309,21 @@ export default function OrgHealthContent() {
       <Section
         title="Reviewer load"
         description="Open review requests per person, and how long the oldest has been waiting."
+        icon={<PeopleIcon />}
+        // Badge leads with the problem when there is one — how many people are
+        // over the threshold matters more than how many have any queue at all.
+        badge={
+          summary.overloadedReviewers > 0
+            ? `${summary.overloadedReviewers} overloaded`
+            : reviewerLoad.length === 0
+              ? "no queue"
+              : `${reviewerLoad.length} reviewing`
+        }
+        tone={summary.overloadedReviewers > 0 ? "warn" : "neutral"}
         isEmpty={reviewerLoad.length === 0}
         emptyMessage="No pending review requests. If that looks wrong, sync a repo — reviewer data only arrives from GitHub on sync."
       >
-        <div className="divide-y divide-neutral-200 dark:divide-neutral-800 border-t border-neutral-200 dark:border-neutral-800">
+        <div className="divide-y divide-neutral-200 dark:divide-neutral-800">
           {reviewerLoad.map((r) => {
             const overloaded = r.pending_count >= thresholds.reviewerOverload;
             return (
@@ -256,10 +358,17 @@ export default function OrgHealthContent() {
       <Section
         title="Repository activity"
         description="Least recently active first. A repo with open PRs and no activity is the one to worry about."
+        icon={<RepoIcon />}
+        badge={
+          summary.quietRepos > 0
+            ? `${summary.quietRepos} quiet`
+            : `${quietRepos.length} active`
+        }
+        tone={summary.quietRepos > 0 ? "warn" : "neutral"}
         isEmpty={quietRepos.length === 0}
         emptyMessage="No repositories synced yet."
       >
-        <div className="divide-y divide-neutral-200 dark:divide-neutral-800 border-t border-neutral-200 dark:border-neutral-800">
+        <div className="divide-y divide-neutral-200 dark:divide-neutral-800">
           {quietRepos.map((repo) => {
             const quiet = repo.days_quiet >= thresholds.quietRepoDays;
             return (

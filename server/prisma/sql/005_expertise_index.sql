@@ -64,4 +64,7 @@ alter table public.file_touches enable row level security;
 alter table public.users
   add column if not exists allow_review_suggestions boolean not null default true;
 
+insert into public.schema_migrations (version, name) values ('005', 'expertise_index')
+  on conflict (version) do nothing;
+
 commit;
