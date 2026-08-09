@@ -6,7 +6,7 @@ import useSWR from "swr";
 import { Prism as SyntaxHighlighter } from "react-syntax-highlighter";
 import { vs, vscDarkPlus } from "react-syntax-highlighter/dist/esm/styles/prism";
 import { CodeAPI, codeContentsKey, lastCommitKey } from "@/API/CodeAPI";
-import { FolderIcon, FileIcon, BranchIcon, ChevronDownIcon } from "@/components/Common/icons";
+import { FolderIcon, FileIcon, BranchIcon, ChevronDownIcon, PanelIcon } from "@/components/Common/icons";
 import ReadmeMarkdown from "@/components/Common/ReadmeMarkdown";
 import { useCodeBranch } from "@/contexts/CodeBranchContext";
 import { timeAgo } from "@/lib/timeAgo";
@@ -84,7 +84,7 @@ function CopyButton({ content }: { content: string }) {
 }
 
 export default function CodeBrowser({ repoId, path }: { repoId: string; path: string }) {
-  const { branch, setBranch, branches } = useCodeBranch();
+  const { branch, setBranch, branches, sidebarOpen, setSidebarOpen, canToggleSidebar } = useCodeBranch();
   const [filterQuery, setFilterQuery] = useState("");
   const filterInputRef = useRef<HTMLInputElement>(null);
   const isDark = usePrefersDark();
@@ -146,6 +146,16 @@ export default function CodeBrowser({ repoId, path }: { repoId: string; path: st
   return (
     <div className="space-y-3">
       <div className="flex items-center gap-3">
+        {canToggleSidebar && !sidebarOpen && (
+          <button
+            onClick={() => setSidebarOpen(true)}
+            title="Expand file tree"
+            className="shrink-0 p-1.5 rounded-md border border-neutral-300 dark:border-neutral-700 hover:bg-neutral-100 dark:hover:bg-neutral-800 text-neutral-500 dark:text-neutral-400"
+          >
+            <PanelIcon />
+          </button>
+        )}
+
         {branches.length > 0 && (
           <div className="relative shrink-0">
             <select

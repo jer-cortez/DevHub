@@ -101,7 +101,7 @@ export default function OverviewContent() {
           {popularRepositories.map((repo) => (
             <Link
               key={repo.id}
-              href={`/dashboard/repositories/${repo.id}/pull-requests`}
+              href={`/dashboard/repositories/${repo.id}/code`}
               className="rounded-lg border border-neutral-200 dark:border-neutral-800 p-4 space-y-1 hover:border-neutral-400 dark:hover:border-neutral-600 transition-colors"
             >
               <div className="flex items-center justify-between">
@@ -132,7 +132,7 @@ export default function OverviewContent() {
               <div key={repo.id} className="flex items-center justify-between gap-4 py-4">
                 <div className="min-w-0 space-y-1">
                   <Link
-                    href={`/dashboard/repositories/${repo.id}/pull-requests`}
+                    href={`/dashboard/repositories/${repo.id}/code`}
                     className="font-medium text-blue-600 dark:text-blue-400 hover:underline"
                   >
                     {repo.name}

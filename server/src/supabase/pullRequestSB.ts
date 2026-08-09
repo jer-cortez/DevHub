@@ -28,6 +28,26 @@ export const PullRequestSB = {
   async findByRepoIdAndNumber(repoId: string, prNumber: number): Promise<pull_request | null> {
     return prisma.pull_request.findFirst({ where: { repo_id: repoId, github_pr_number: prNumber } });
   },
+  /**
+   * Written only by the summarizer. Kept off `upsertByGithubPrId` on purpose:
+   * a GitHub sync must not clear a summary, and a summary must not overwrite
+   * synced fields.
+   */
+  async setSummary(
+    id: string,
+    data: {
+      summary: string;
+      summary_impact: string;
+      summary_sha: string;
+      summary_model: string;
+      summary_truncated: boolean;
+    }
+  ): Promise<pull_request> {
+    return prisma.pull_request.update({
+      where: { id },
+      data: { ...data, summarized_at: new Date() },
+    });
+  },
   async upsertByGithubPrId(data: {
     github_pr_id: bigint;
     github_pr_number: number;
@@ -38,6 +58,7 @@ export const PullRequestSB = {
     status: string;
     base_branch: string;
     head_branch: string;
+    head_sha: string;
     github_url: string;
     closed_at?: Date | null;
     merged_at?: Date | null;

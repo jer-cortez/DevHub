@@ -53,7 +53,7 @@ export default function RepositoriesList() {
           {repositories.map((repo) => (
             <Link
               key={repo.id}
-              href={`/dashboard/repositories/${repo.id}/pull-requests`}
+              href={`/dashboard/repositories/${repo.id}/code`}
               className="rounded-lg border border-neutral-200 dark:border-neutral-800 p-4 space-y-2 hover:border-neutral-400 dark:hover:border-neutral-600 transition-colors"
             >
               <div className="flex items-center justify-between">

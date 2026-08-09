@@ -5,6 +5,9 @@ import useSWR from "swr";
 import { PullRequestsAPI, pullRequestsKey } from "@/API/PullRequestsAPI";
 import { ReviewCommentsAPI, reviewCommentCountsKey } from "@/API/ReviewCommentsAPI";
 import { useRepoEvents, type RepoEvent } from "@/hooks/useRepoEvents";
+import { PrDependenciesAPI, blockedCountsKey } from "@/API/PrDependenciesAPI";
+import PullRequestSummary from "./PullRequestSummary";
+import PullRequestDependencies from "./PullRequestDependencies";
 
 const STATUS_STYLES: Record<string, string> = {
   open: "bg-emerald-100 text-emerald-800 dark:bg-emerald-900/40 dark:text-emerald-300",
@@ -27,6 +30,12 @@ export default function PullRequestsList({ repoId }: { repoId: string }) {
     data: commentCounts = {},
     mutate: mutateCommentCounts,
   } = useSWR(reviewCommentCountsKey(prIds), () => ReviewCommentsAPI.countsByPrIds(prIds));
+
+  // One batched call for the whole list rather than one per card.
+  const { data: blockedCounts = {}, mutate: mutateBlockedCounts } = useSWR(
+    blockedCountsKey(prIds),
+    () => PrDependenciesAPI.blockedCounts(prIds)
+  );
 
   const handleRepoEvent = useCallback(
     (event: RepoEvent) => {
@@ -88,23 +97,37 @@ export default function PullRequestsList({ repoId }: { repoId: string }) {
 
       {pullRequests && pullRequests.length > 0 && (
         <div className="space-y-2">
+          {/* The card is a div rather than a link so the summary toggle inside
+              it isn't nested in an anchor — only the title navigates now. */}
           {pullRequests.map((pr) => (
-            <a
+            <div
               key={pr.id}
-              href={pr.github_url}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="block rounded-lg border border-neutral-200 dark:border-neutral-800 p-4 hover:border-neutral-400 dark:hover:border-neutral-600 transition-colors"
+              className="rounded-lg border border-neutral-200 dark:border-neutral-800 p-4 hover:border-neutral-400 dark:hover:border-neutral-600 transition-colors"
             >
               <div className="flex items-center justify-between">
-                <h3 className="font-medium">
-                  #{pr.github_pr_number} {pr.title}
-                </h3>
-                <span
-                  className={`text-xs rounded-full px-2 py-0.5 ${STATUS_STYLES[pr.status] ?? STATUS_STYLES.open}`}
+                <a
+                  href={pr.github_url}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="font-medium hover:underline"
                 >
-                  {pr.status}
-                </span>
+                  #{pr.github_pr_number} {pr.title}
+                </a>
+                <div className="flex items-center gap-2 shrink-0">
+                  {(blockedCounts[pr.id] ?? 0) > 0 && (
+                    <span
+                      title="Waiting on another pull request"
+                      className="text-xs rounded-full px-2 py-0.5 bg-amber-100 text-amber-800 dark:bg-amber-900/40 dark:text-amber-300"
+                    >
+                      blocked by {blockedCounts[pr.id]}
+                    </span>
+                  )}
+                  <span
+                    className={`text-xs rounded-full px-2 py-0.5 ${STATUS_STYLES[pr.status] ?? STATUS_STYLES.open}`}
+                  >
+                    {pr.status}
+                  </span>
+                </div>
               </div>
               <div className="flex items-center justify-between mt-1">
                 <p className="text-xs text-neutral-400 dark:text-neutral-600">
@@ -114,7 +137,13 @@ export default function PullRequestsList({ repoId }: { repoId: string }) {
                   💬 {commentCounts[pr.id] ?? 0}
                 </p>
               </div>
-            </a>
+              <PullRequestDependencies
+                prId={pr.id}
+                prNumber={pr.github_pr_number}
+                onChange={mutateBlockedCounts}
+              />
+              <PullRequestSummary prId={pr.id} />
+            </div>
           ))}
         </div>
       )}

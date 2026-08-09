@@ -28,7 +28,9 @@ export default function CodeLayout({ children }: { children: ReactNode }) {
   }, [repo]);
 
   return (
-    <CodeBranchContext.Provider value={{ branch, setBranch, branches }}>
+    <CodeBranchContext.Provider
+      value={{ branch, setBranch, branches, sidebarOpen, setSidebarOpen, canToggleSidebar: !atRoot }}
+    >
       <div className="flex gap-4">
         {/* The tree is for navigating into the repo, so it has no reason to
             show at the root overview — only once you've actually clicked
@@ -49,18 +51,10 @@ export default function CodeLayout({ children }: { children: ReactNode }) {
           </div>
         )}
 
-        <div className="flex-1 min-w-0 space-y-3">
-          {!atRoot && !sidebarOpen && (
-            <button
-              onClick={() => setSidebarOpen(true)}
-              title="Expand file tree"
-              className="p-1.5 rounded-md border border-neutral-300 dark:border-neutral-700 hover:bg-neutral-100 dark:hover:bg-neutral-800 text-neutral-500 dark:text-neutral-400 w-fit"
-            >
-              <PanelIcon />
-            </button>
-          )}
-          {children}
-        </div>
+        {/* The matching "expand" button lives in CodeBrowser, so it can sit
+            inline with the branch selector and breadcrumb instead of on a
+            row of its own. */}
+        <div className="flex-1 min-w-0 space-y-3">{children}</div>
       </div>
     </CodeBranchContext.Provider>
   );

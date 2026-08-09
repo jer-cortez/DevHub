@@ -18,4 +18,35 @@ export const PullRequestReviewersSB = {
   async findByPrId(prId: string): Promise<pull_request_reviewers[]> {
     return prisma.pull_request_reviewers.findMany({ where: { pr_id: prId } });
   },
+  /**
+   * A person is requested on a PR at most once, so (pr_id, user_id) is the
+   * natural key. `assigned_at` is only set on insert — re-syncing must not
+   * reset how long someone has been sitting on a request, which is exactly
+   * the number the health dashboard reports.
+   */
+  async upsertByPrAndUser(data: {
+    pr_id: string;
+    user_id: string;
+    status: string;
+    assigned_at: Date;
+    reviewed_at?: Date | null;
+  }): Promise<pull_request_reviewers> {
+    const { assigned_at, ...mutable } = data;
+    return prisma.pull_request_reviewers.upsert({
+      where: { pr_id_user_id: { pr_id: data.pr_id, user_id: data.user_id } },
+      update: mutable,
+      create: data,
+    });
+  },
+  /**
+   * Clears requests that GitHub no longer reports — a review was submitted or
+   * the request was withdrawn. Without this, someone's pending count would
+   * only ever grow.
+   */
+  async deleteStaleForPr(prId: string, keepUserIds: string[]): Promise<number> {
+    const { count } = await prisma.pull_request_reviewers.deleteMany({
+      where: { pr_id: prId, status: 'pending', user_id: { notIn: keepUserIds } },
+    });
+    return count;
+  },
 };

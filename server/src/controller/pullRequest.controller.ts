@@ -1,5 +1,6 @@
 import type { Request, Response } from 'express';
 import { PullRequestServices } from '../services/pullRequest.services';
+import { PrSummaryServices } from '../services/prSummary.services';
 
 export const PullRequestController = {
   async findAll(_req: Request, res: Response) {
@@ -43,6 +44,24 @@ export const PullRequestController = {
       res.status(200).json({ data: prs });
     } catch (error) {
       res.status(500).json({ error: 'Failed to fetch pull requests for repository' });
+    }
+  },
+  async summarize(req: Request, res: Response) {
+    try {
+      const id = req.params.id as string;
+      const pr = await PrSummaryServices.getOrGenerate(id);
+      res.status(200).json({
+        data: {
+          summary: pr.summary,
+          impact: pr.summary_impact,
+          truncated: pr.summary_truncated,
+          model: pr.summary_model,
+          summarized_at: pr.summarized_at,
+        },
+      });
+    } catch (error) {
+      console.error('Failed to summarize pull request:', error);
+      res.status(500).json({ error: 'Failed to summarize pull request' });
     }
   },
   async sync(req: Request, res: Response) {

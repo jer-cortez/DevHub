@@ -26,6 +26,7 @@ const ORG_TABS: OrgTab[] = [
   { label: "Overview", href: "/dashboard", enabled: true, countKey: null },
   { label: "Repositories", href: "/dashboard/repositories", enabled: true, countKey: "repositories" },
   { label: "Projects", href: "#", enabled: false, countKey: null },
+  { label: "Health", href: "/dashboard/health", enabled: true, countKey: null },
   { label: "Teams", href: "/dashboard/teams", enabled: true, countKey: null },
   { label: "People", href: "/dashboard/people", enabled: true, countKey: "people" },
 ];
@@ -195,7 +196,7 @@ export default function DashboardShell({
             )}
       </nav>
 
-      <main className="flex-1 p-6">{children}</main>
+      <main className="flex-1 w-full max-w-7xl mx-auto px-6 py-6">{children}</main>
 
       <NotificationToasts />
     </div>

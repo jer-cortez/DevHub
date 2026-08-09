@@ -17,6 +17,8 @@ import { teamsRouter } from './gateway/routes/teams.routes';
 import { issuesRouter } from './gateway/routes/issues.routes';
 import { authRouter } from './gateway/routes/auth.routes';
 import { codeRouter } from './gateway/routes/code.routes';
+import { orgHealthRouter } from './gateway/routes/orgHealth.routes';
+import { prDependenciesRouter } from './gateway/routes/prDependencies.routes';
 import { webhooksRouter } from './gateway/routes/webhooks.routes';
 import { eventsRouter } from './gateway/routes/events.routes';
 import { AuthMiddleware } from './gateway/middleware/auth.middleware';
@@ -71,6 +73,8 @@ app.use('/api/board-collaborators', boardCollaboratorsRouter);
 app.use('/api/notifications', notificationsRouter);
 app.use('/api/teams', teamsRouter);
 app.use('/api/issues', issuesRouter);
+app.use('/api/org-health', orgHealthRouter);
+app.use('/api/pr-dependencies', prDependenciesRouter);
 
 
 server.on('upgrade', (req, socket, head) => {

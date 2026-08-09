@@ -105,6 +105,10 @@ export const WebhooksServices = {
       status: pr.merged_at ? 'merged' : pr.state,
       base_branch: pr.base.ref,
       head_branch: pr.head.ref,
+      // Drives summary invalidation. A `synchronize` event fires whenever new
+      // commits are pushed, so this is what makes a stored summary go stale
+      // the moment the code it described changes.
+      head_sha: pr.head.sha,
       github_url: pr.html_url,
       closed_at: pr.closed_at ? new Date(pr.closed_at) : null,
       merged_at: pr.merged_at ? new Date(pr.merged_at) : null,
