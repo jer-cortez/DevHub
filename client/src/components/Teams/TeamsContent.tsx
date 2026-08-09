@@ -6,6 +6,7 @@ import { RepositoriesAPI, repositoriesKey } from "@/API/RepositoriesAPI";
 import { TeamsAPI, myTeamKey, teamByRepoKey } from "@/API/TeamsAPI";
 import { RepoFollowersAPI, myFollowsKey } from "@/API/RepoFollowersAPI";
 import FollowControls from "./FollowControls";
+import ReviewSuggestionsToggle from "./ReviewSuggestionsToggle";
 
 export default function TeamsContent() {
   const { data: repositories = [] } = useSWR(repositoriesKey, RepositoriesAPI.findAll);
@@ -48,6 +49,8 @@ export default function TeamsContent() {
           repositories to keep an eye on them without joining.
         </p>
       </div>
+
+      <ReviewSuggestionsToggle />
 
       {error && <p className="text-sm text-red-600 dark:text-red-400">{error}</p>}
 

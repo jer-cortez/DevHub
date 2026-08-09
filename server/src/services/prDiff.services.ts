@@ -42,6 +42,29 @@ export interface PrDiff {
 
 export const PrDiffServices = {
   /**
+   * Just the changed file paths — no patches.
+   *
+   * Separate from `fetch` below because the expertise index only needs
+   * filenames, and it needs *all* of them rather than the 20-file slice the
+   * summarizer works from. Skipping patch bodies also makes this dramatically
+   * cheaper to hold in Redis across a whole-org backfill.
+   */
+  async listFilePaths(repoName: string, prNumber: number, headSha: string): Promise<string[]> {
+    return cached(`pr:filepaths:${repoName}:${prNumber}:${headSha}`, 86400, async () => {
+      const files = await octokit.paginate(octokit.rest.pulls.listFiles, {
+        owner: ORG_NAME,
+        repo: repoName,
+        pull_number: prNumber,
+        per_page: 100,
+      });
+
+      return files
+        .map((file) => file.filename)
+        .filter((name) => !NOISE_PATTERNS.some((p) => p.test(name)));
+    });
+  },
+
+  /**
    * Fetches a PR's diff, dropping generated files and capping total size.
    *
    * Keyed on the head SHA rather than the PR number, so a force-push can

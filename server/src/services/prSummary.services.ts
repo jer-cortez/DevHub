@@ -53,8 +53,12 @@ const SYSTEM_INSTRUCTIONS =
  * the tree from GitHub per PR; and as a prompt-cache prefix on the request
  * itself, because it's byte-identical across every PR in a repo and so bills
  * at roughly a tenth of the rate after the first summary.
+ *
+ * Exported because onboarding builds its area summaries from the same
+ * context — sharing it means both features hit one Redis entry and one
+ * prompt-cache prefix per repo rather than two of each.
  */
-async function repoContext(repoId: string): Promise<string> {
+export async function repoContext(repoId: string): Promise<string> {
   const repo = await RepositoriesServices.findById(repoId);
 
   const key = `pr:summary:repo-context:${repoId}`;

@@ -6,6 +6,7 @@ import { PullRequestSB } from '../supabase/pullRequestSB';
 import { PullRequestReviewersSB } from '../supabase/pullRequestReviewersSB';
 import { ReviewCommentsServices } from './reviewComments.services';
 import { fanOut } from './notificationFanout';
+import { ExpertiseServices } from './expertise.services';
 import { octokit } from '../lib/github';
 import { redisPub, REPO_EVENTS_CHANNEL } from '../lib/redis';
 import type { pull_request } from '../generated/prisma/client';
@@ -145,6 +146,18 @@ export const WebhooksServices = {
     // durable per-user notifications for team members and followers, which
     // reach them anywhere in the app and survive a page reload.
     await this.publish({ type: 'pull_request', repoId: repo.id, data: updated });
+
+    // Index expertise at merge time — shipped work is the signal worth
+    // ranking reviewers on, and doing it here means the index stays current
+    // without the backfill script ever running again. Deliberately not
+    // awaited into the caller's failure path: a GitHub hiccup while listing
+    // files must not fail the webhook, or GitHub will retry the whole
+    // delivery and duplicate the notification fan-out below.
+    if (payload.action === 'closed' && payload.pull_request.merged) {
+      ExpertiseServices.indexPr(updated.id).catch((error) => {
+        console.warn(`Expertise indexing failed for PR ${updated.id}:`, error);
+      });
+    }
 
     const actor = await UserServices.upsertByGithubId({
       github_id: payload.sender.id,

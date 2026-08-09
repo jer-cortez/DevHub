@@ -8,6 +8,8 @@ import { useRepoEvents, type RepoEvent } from "@/hooks/useRepoEvents";
 import { PrDependenciesAPI, blockedCountsKey } from "@/API/PrDependenciesAPI";
 import PullRequestSummary from "./PullRequestSummary";
 import PullRequestDependencies from "./PullRequestDependencies";
+import ReviewerSuggestions from "./ReviewerSuggestions";
+import PullRequestOnboarding from "./PullRequestOnboarding";
 
 const STATUS_STYLES: Record<string, string> = {
   open: "bg-emerald-100 text-emerald-800 dark:bg-emerald-900/40 dark:text-emerald-300",
@@ -142,6 +144,10 @@ export default function PullRequestsList({ repoId }: { repoId: string }) {
                 prNumber={pr.github_pr_number}
                 onChange={mutateBlockedCounts}
               />
+              {/* Renders nothing for people who've worked in this repo, so it
+                  can sit here unconditionally. */}
+              <PullRequestOnboarding prId={pr.id} />
+              {pr.status === "open" && <ReviewerSuggestions prId={pr.id} />}
               <PullRequestSummary prId={pr.id} />
             </div>
           ))}
