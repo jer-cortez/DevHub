@@ -14,6 +14,15 @@ export const REPO_EVENTS_CHANNEL = 'repo-events';
 export const BOARD_EVENTS_CHANNEL = 'board-events';
 
 /**
+ * Carries personalized notifications, addressed to a single user rather than
+ * to everyone watching a repo. REPO_EVENTS_CHANNEL answers "what happened in
+ * this repo" (and is only delivered while you have that repo's page open);
+ * this one answers "what happened that concerns *me*", across every repo the
+ * user is on a team for or follows, and is delivered anywhere in the app.
+ */
+export const USER_EVENTS_CHANNEL = 'user-events';
+
+/**
  * Two separate Redis connections, not one shared client:
  * once a connection issues SUBSCRIBE, ioredis (like Redis itself) puts it
  * into subscriber mode, where it can no longer run normal commands like

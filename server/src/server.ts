@@ -13,6 +13,8 @@ import { prReviewersRouter } from './gateway/routes/pullRequestReviewers.routes'
 import { drawingBoardsRouter } from './gateway/routes/drawingBoards.routes';
 import { boardCollaboratorsRouter } from './gateway/routes/drawingBoardCollaborators.routes';
 import { notificationsRouter } from './gateway/routes/notifications.routes';
+import { teamsRouter } from './gateway/routes/teams.routes';
+import { issuesRouter } from './gateway/routes/issues.routes';
 import { authRouter } from './gateway/routes/auth.routes';
 import { codeRouter } from './gateway/routes/code.routes';
 import { webhooksRouter } from './gateway/routes/webhooks.routes';
@@ -67,6 +69,8 @@ app.use('/api/pr-reviewers', prReviewersRouter);
 app.use('/api/drawing-boards', drawingBoardsRouter);
 app.use('/api/board-collaborators', boardCollaboratorsRouter);
 app.use('/api/notifications', notificationsRouter);
+app.use('/api/teams', teamsRouter);
+app.use('/api/issues', issuesRouter);
 
 
 server.on('upgrade', (req, socket, head) => {

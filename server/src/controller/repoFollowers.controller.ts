@@ -1,39 +1,71 @@
 import type { Request, Response } from 'express';
-import { RepoFollowersServices } from '../services/repoFollowers.services';
+import { RepoFollowersServices, type FollowPreferences } from '../services/repoFollowers.services';
+import { resolveLocalUser } from '../services/currentUser.services';
+
+/** Picks only the known preference booleans out of a request body, so a client can't set arbitrary columns via the spread. */
+function extractPreferences(body: unknown): Partial<FollowPreferences> {
+  const source = (body ?? {}) as Record<string, unknown>;
+  const preferences: Partial<FollowPreferences> = {};
+  const keys: (keyof FollowPreferences)[] = [
+    'notify_pull_requests',
+    'notify_issues',
+    'notify_comments',
+  ];
+  for (const key of keys) {
+    if (typeof source[key] === 'boolean') preferences[key] = source[key] as boolean;
+  }
+  return preferences;
+}
 
 export const RepoFollowersController = {
-  async findAll(_req: Request, res: Response) {
+  async findMine(req: Request, res: Response) {
     try {
-      const followers = await RepoFollowersServices.findAll();
-      res.status(200).json({ data: followers });
+      const user = await resolveLocalUser(req);
+      const follows = await RepoFollowersServices.findForUser(user.id);
+      res.status(200).json({ data: follows });
     } catch (error) {
-      res.status(500).json({ error: 'Failed to fetch repo followers' });
+      res.status(500).json({ error: 'Failed to fetch followed repositories' });
     }
   },
-  async findById(req: Request, res: Response) {
+  async follow(req: Request, res: Response) {
     try {
-      const id = BigInt(req.params.id as string);
-      const follower = await RepoFollowersServices.findById(id);
-      res.status(200).json({ data: follower });
+      const repoId = req.body?.repoId as string | undefined;
+      if (!repoId) {
+        res.status(400).json({ error: 'repoId is required' });
+        return;
+      }
+
+      const user = await resolveLocalUser(req);
+      const follow = await RepoFollowersServices.follow(
+        user.id,
+        repoId,
+        extractPreferences(req.body)
+      );
+      res.status(200).json({ data: follow });
     } catch (error) {
-      res.status(500).json({ error: 'Failed to fetch repo follower' });
+      res.status(500).json({ error: 'Failed to follow repository' });
     }
   },
-  async create(req: Request, res: Response) {
+  async updatePreferences(req: Request, res: Response) {
     try {
-      const follower = await RepoFollowersServices.create(req.body);
-      res.status(201).json({ data: follower });
+      const user = await resolveLocalUser(req);
+      const follow = await RepoFollowersServices.updatePreferences(
+        user.id,
+        req.params.repoId as string,
+        extractPreferences(req.body)
+      );
+      res.status(200).json({ data: follow });
     } catch (error) {
-      res.status(500).json({ error: 'Failed to create repo follower' });
+      res.status(500).json({ error: 'Failed to update follow preferences' });
     }
   },
-  async delete(req: Request, res: Response) {
+  async unfollow(req: Request, res: Response) {
     try {
-      const id = BigInt(req.params.id as string);
-      await RepoFollowersServices.delete(id);
-      res.status(200).json({ message: 'Repo follower deleted' });
+      const user = await resolveLocalUser(req);
+      await RepoFollowersServices.unfollow(user.id, req.params.repoId as string);
+      res.status(200).json({ data: null });
     } catch (error) {
-      res.status(500).json({ error: 'Failed to delete repo follower' });
+      res.status(500).json({ error: 'Failed to unfollow repository' });
     }
   },
 };

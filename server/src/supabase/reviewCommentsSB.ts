@@ -18,16 +18,25 @@ export const ReviewCommentsSB = {
   async findByPrId(prId: string): Promise<review_comments[]> {
     return prisma.review_comments.findMany({ where: { pr_id: prId } });
   },
+  /** All comments on one issue. The issue counterpart of findByPrId — same table, discriminated by which of the two id columns is set. */
+  async findByIssueId(issueId: string): Promise<review_comments[]> {
+    return prisma.review_comments.findMany({ where: { issue_id: issueId } });
+  },
   /**
    * Upserts a comment keyed on GitHub's comment id, so re-delivered or
    * edited webhook events overwrite the same row instead of duplicating it.
    * `review_id`/`file_path`/`line_number` are null for top-level PR
    * conversation comments (issue_comment events), populated for inline
    * review comments (pull_request_review_comment events).
+   *
+   * Exactly one of `pr_id` / `issue_id` must be set — a DB check constraint
+   * (`review_comments_pr_xor_issue`) enforces that, so a mistake here fails
+   * loudly at write time rather than producing an orphaned comment.
    */
   async upsertByGithubCommentId(data: {
     github_comment_id: bigint;
-    pr_id: string;
+    pr_id?: string | null;
+    issue_id?: string | null;
     author_id: string;
     body: string;
     review_id?: string | null;
@@ -56,7 +65,26 @@ export const ReviewCommentsSB = {
 
     const counts: Record<string, number> = {};
     for (const row of grouped) {
+      // pr_id is nullable now that this table also carries issue comments,
+      // so it's typed `string | null` even though the `in: prIds` filter
+      // above already excludes nulls.
+      if (row.pr_id === null) continue;
       counts[row.pr_id] = row._count.pr_id;
+    }
+    return counts;
+  },
+  /** The issue counterpart of countByPrIds, for the issue list's comment badges. */
+  async countByIssueIds(issueIds: string[]): Promise<Record<string, number>> {
+    const grouped = await prisma.review_comments.groupBy({
+      by: ['issue_id'],
+      where: { issue_id: { in: issueIds } },
+      _count: { issue_id: true },
+    });
+
+    const counts: Record<string, number> = {};
+    for (const row of grouped) {
+      if (row.issue_id === null) continue;
+      counts[row.issue_id] = row._count.issue_id;
     }
     return counts;
   },

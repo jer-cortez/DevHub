@@ -3,9 +3,9 @@ import { RepoFollowersController } from '../../controller/repoFollowers.controll
 
 const router = express.Router();
 
-router.get('/all', RepoFollowersController.findAll);
-router.get('/:id', RepoFollowersController.findById);
-router.post('/create', RepoFollowersController.create);
-router.delete('/:id', RepoFollowersController.delete);
+router.get('/mine', RepoFollowersController.findMine);
+router.post('/follow', RepoFollowersController.follow);
+router.patch('/:repoId/preferences', RepoFollowersController.updatePreferences);
+router.delete('/:repoId', RepoFollowersController.unfollow);
 
 export { router as repoFollowersRouter };

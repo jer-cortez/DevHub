@@ -19,9 +19,13 @@ export const ReviewCommentsServices = {
   async findByPrId(prId: string): Promise<review_comments[]> {
     return ReviewCommentsSB.findByPrId(prId);
   },
+  async findByIssueId(issueId: string): Promise<review_comments[]> {
+    return ReviewCommentsSB.findByIssueId(issueId);
+  },
   async upsertByGithubCommentId(data: {
     github_comment_id: bigint;
-    pr_id: string;
+    pr_id?: string | null;
+    issue_id?: string | null;
     author_id: string;
     body: string;
     review_id?: string | null;
@@ -33,5 +37,8 @@ export const ReviewCommentsServices = {
   },
   async countByPrIds(prIds: string[]): Promise<Record<string, number>> {
     return ReviewCommentsSB.countByPrIds(prIds);
+  },
+  async countByIssueIds(issueIds: string[]): Promise<Record<string, number>> {
+    return ReviewCommentsSB.countByIssueIds(issueIds);
   },
 };

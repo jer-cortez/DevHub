@@ -1,19 +1,36 @@
-import { RepoFollowersSB } from '../supabase/repoFollowersSB';
-import type { repo_followers, Prisma } from '../generated/prisma/client';
+import { RepoFollowersSB, type FollowPreferences } from '../supabase/repoFollowersSB';
+import type { repo_followers } from '../generated/prisma/client';
 
+export type { FollowPreferences };
+
+/**
+ * Following is the lighter-weight counterpart to team membership: you don't
+ * work on the repo, you just want a filtered view of what's happening there.
+ * Unlike team membership, following is not exclusive — you can follow any
+ * number of repos.
+ */
 export const RepoFollowersServices = {
-  async findAll(): Promise<repo_followers[]> {
-    return RepoFollowersSB.findAll();
+  async findForUser(userId: string): Promise<repo_followers[]> {
+    return RepoFollowersSB.findByUserId(userId);
   },
-  async findById(id: bigint): Promise<repo_followers> {
-    const follower = await RepoFollowersSB.findById(id);
-    if (!follower) throw new Error('Repo follower not found');
-    return follower;
+  async findOne(userId: string, repoId: string): Promise<repo_followers | null> {
+    return RepoFollowersSB.findOne(userId, repoId);
   },
-  async create(payload: Prisma.repo_followersCreateInput): Promise<repo_followers> {
-    return RepoFollowersSB.create(payload);
+  async follow(
+    userId: string,
+    repoId: string,
+    preferences?: Partial<FollowPreferences>
+  ): Promise<repo_followers> {
+    return RepoFollowersSB.follow(userId, repoId, preferences);
   },
-  async delete(id: bigint): Promise<repo_followers> {
-    return RepoFollowersSB.delete(id);
+  async updatePreferences(
+    userId: string,
+    repoId: string,
+    preferences: Partial<FollowPreferences>
+  ): Promise<repo_followers> {
+    return RepoFollowersSB.updatePreferences(userId, repoId, preferences);
+  },
+  async unfollow(userId: string, repoId: string): Promise<void> {
+    return RepoFollowersSB.unfollow(userId, repoId);
   },
 };

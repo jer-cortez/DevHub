@@ -8,10 +8,20 @@ export interface Repository {
   default_branch: string;
 }
 
+export interface RepoActivity {
+  repoId: string;
+  pushedAt: string | null;
+  stargazersCount: number;
+  forksCount: number;
+  language: string | null;
+  weeklyCommits: number[];
+}
+
 export const RepositoriesAPI = {
   findAll: () => apiRequest<Repository[]>("/api/repositories/all"),
   findById: (id: string) => apiRequest<Repository>(`/api/repositories/${id}`),
   syncFromGithub: () => apiRequest<Repository[]>("/api/repositories/sync", { method: "POST" }),
+  listActivity: () => apiRequest<RepoActivity[]>("/api/repositories/activity"),
 };
 
 /**
@@ -22,3 +32,4 @@ export const RepositoriesAPI = {
  */
 export const repositoriesKey = "repositories" as const;
 export const repositoryKey = (id: string) => ["repository", id] as const;
+export const repositoriesActivityKey = "repositories-activity" as const;

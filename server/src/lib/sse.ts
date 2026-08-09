@@ -7,7 +7,7 @@ import { redisSub, REPO_EVENTS_CHANNEL } from './redis';
  * `data` is the raw upserted row (a pull_request or review_comments record).
  */
 export interface RepoEvent {
-  type: 'pull_request' | 'comment';
+  type: 'pull_request' | 'issue' | 'comment';
   repoId: string;
   data: unknown;
 }

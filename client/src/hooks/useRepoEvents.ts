@@ -5,7 +5,7 @@ import { createClient } from "@/lib/supabase/client";
 const API_URL = process.env.NEXT_PUBLIC_API_URL!;
 
 export interface RepoEvent {
-  type: "pull_request" | "comment";
+  type: "pull_request" | "issue" | "comment";
   repoId: string;
   data: unknown;
 }

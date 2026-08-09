@@ -46,4 +46,14 @@ export const ReviewCommentsController = {
       res.status(500).json({ error: 'Failed to fetch comment counts' });
     }
   },
+  /** Same, for issues — GET /issue-counts?issueIds=a,b,c. */
+  async countByIssueIds(req: Request, res: Response) {
+    try {
+      const issueIds = ((req.query.issueIds as string) ?? '').split(',').filter(Boolean);
+      const counts = await ReviewCommentsServices.countByIssueIds(issueIds);
+      res.status(200).json({ data: counts });
+    } catch (error) {
+      res.status(500).json({ error: 'Failed to fetch issue comment counts' });
+    }
+  },
 };

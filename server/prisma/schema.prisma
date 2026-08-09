@@ -64,10 +64,20 @@ model notifications {
   id         String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
   user_id    String   @db.Uuid
   type       String   @db.VarChar
-  pr_id      String   @db.Uuid
-  board_id   String   @db.Uuid
-  is_read    Boolean
+  pr_id      String?  @db.Uuid
+  board_id   String?  @db.Uuid
+  is_read    Boolean  @default(false)
   created_at DateTime @default(now()) @db.Timestamptz(6)
+  issue_id   String?  @db.Uuid
+  comment_id String?  @db.Uuid
+  repo_id    String?  @db.Uuid
+  actor_id   String?  @db.Uuid
+  is_direct  Boolean  @default(false)
+  title      String?  @db.VarChar
+  url        String?  @db.VarChar
+
+  @@index([user_id, created_at(sort: Desc)], map: "notifications_user_created_idx")
+  @@index([user_id, is_read], map: "notifications_user_unread_idx")
 }
 
 /// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
@@ -101,10 +111,15 @@ model pull_request_reviewers {
 
 /// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
 model repo_followers {
-  id          BigInt   @id @default(autoincrement())
-  user_id     String   @db.Uuid
-  repo_id     String   @db.Uuid
-  followed_at DateTime @default(now()) @db.Timestamp(6)
+  id                   BigInt   @id @default(autoincrement())
+  user_id              String   @db.Uuid
+  repo_id              String   @db.Uuid
+  followed_at          DateTime @default(now()) @db.Timestamp(6)
+  notify_pull_requests Boolean  @default(true)
+  notify_issues        Boolean  @default(false)
+  notify_comments      Boolean  @default(false)
+
+  @@unique([user_id, repo_id], map: "repo_followers_user_repo_key")
 }
 
 /// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
@@ -125,13 +140,16 @@ model review_comments {
   id                String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
   github_comment_id BigInt   @unique
   review_id         String?  @db.Uuid
-  pr_id             String   @db.Uuid
+  pr_id             String?  @db.Uuid
   author_id         String   @db.Uuid
   body              String
   file_path         String?  @db.VarChar
   line_number       Int?
   is_resolved       Boolean
   created_at        DateTime @default(now()) @db.Timestamp(6)
+  issue_id          String?  @db.Uuid
+
+  @@index([issue_id])
 }
 
 /// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
@@ -143,4 +161,33 @@ model reviews {
   decision         String   @db.VarChar
   body             String?
   submitted_at     DateTime @db.Timestamptz(6)
+}
+
+/// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
+model issues {
+  id                  String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  github_issue_id     BigInt    @unique
+  github_issue_number Int
+  repo_id             String    @db.Uuid
+  author_id           String    @db.Uuid
+  assignee_id         String?   @db.Uuid
+  title               String    @db.VarChar
+  body                String?
+  status              String    @default("open") @db.VarChar
+  github_url          String    @db.VarChar
+  last_synced_at      DateTime? @db.Timestamp(6)
+  created_at          DateTime  @default(now()) @db.Timestamp(6)
+  closed_at           DateTime? @db.Timestamp(6)
+
+  @@index([repo_id])
+}
+
+/// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
+model team_memberships {
+  id        String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  user_id   String   @unique @db.Uuid
+  repo_id   String   @db.Uuid
+  joined_at DateTime @default(now()) @db.Timestamptz(6)
+
+  @@index([repo_id])
 }

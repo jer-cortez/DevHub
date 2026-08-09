@@ -5,11 +5,11 @@ import Link from "next/link";
 import useSWR from "swr";
 import { Prism as SyntaxHighlighter } from "react-syntax-highlighter";
 import { vs, vscDarkPlus } from "react-syntax-highlighter/dist/esm/styles/prism";
-import ReactMarkdown from "react-markdown";
-import remarkGfm from "remark-gfm";
 import { CodeAPI, codeContentsKey, lastCommitKey } from "@/API/CodeAPI";
 import { FolderIcon, FileIcon, BranchIcon, ChevronDownIcon } from "@/components/Common/icons";
+import ReadmeMarkdown from "@/components/Common/ReadmeMarkdown";
 import { useCodeBranch } from "@/contexts/CodeBranchContext";
+import { timeAgo } from "@/lib/timeAgo";
 
 const EXTENSION_LANGUAGE_MAP: Record<string, string> = {
   ts: "typescript",
@@ -62,28 +62,6 @@ function HistoryIcon() {
       <path d="M8 4a.75.75 0 0 1 .75.75v3l2.4 1.4a.75.75 0 0 1-.75 1.3l-2.775-1.62A.75.75 0 0 1 7.25 8V4.75A.75.75 0 0 1 8 4Z" />
     </svg>
   );
-}
-
-function timeAgo(dateString: string | null): string {
-  if (!dateString) return "";
-  const seconds = Math.floor((Date.now() - new Date(dateString).getTime()) / 1000);
-  const units: [number, string][] = [
-    [60, "second"],
-    [60, "minute"],
-    [24, "hour"],
-    [30, "day"],
-    [12, "month"],
-    [Infinity, "year"],
-  ];
-  let value = seconds;
-  for (const [limit, unit] of units) {
-    if (value < limit) {
-      const rounded = Math.floor(value);
-      return `${rounded} ${unit}${rounded !== 1 ? "s" : ""} ago`;
-    }
-    value = Math.floor(value / limit);
-  }
-  return "";
 }
 
 function CopyButton({ content }: { content: string }) {
@@ -293,26 +271,7 @@ export default function CodeBrowser({ repoId, path }: { repoId: string; path: st
                 README.md
               </div>
               <div className="p-4 text-sm leading-relaxed">
-                <ReactMarkdown
-                  remarkPlugins={[remarkGfm]}
-                  components={{
-                    h1: (props) => <h1 className="text-xl font-semibold mt-4 mb-2" {...props} />,
-                    h2: (props) => <h2 className="text-lg font-semibold mt-4 mb-2" {...props} />,
-                    h3: (props) => <h3 className="text-base font-semibold mt-3 mb-1" {...props} />,
-                    p: (props) => <p className="mb-3 text-neutral-700 dark:text-neutral-300" {...props} />,
-                    ul: (props) => <ul className="list-disc pl-5 mb-3 space-y-1" {...props} />,
-                    ol: (props) => <ol className="list-decimal pl-5 mb-3 space-y-1" {...props} />,
-                    a: (props) => <a className="text-blue-600 dark:text-blue-400 hover:underline" {...props} />,
-                    code: (props) => (
-                      <code className="rounded bg-neutral-100 dark:bg-neutral-800 px-1 py-0.5 text-xs" {...props} />
-                    ),
-                    pre: (props) => (
-                      <pre className="rounded bg-neutral-100 dark:bg-neutral-800 p-3 overflow-x-auto mb-3" {...props} />
-                    ),
-                  }}
-                >
-                  {readme}
-                </ReactMarkdown>
+                <ReadmeMarkdown content={readme} />
               </div>
             </div>
           )}

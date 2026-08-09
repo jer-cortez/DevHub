@@ -8,6 +8,8 @@ export interface Organization {
 
 export const OrganizationsAPI = {
   findAll: () => apiRequest<Organization[]>("/api/organizations/all"),
+  getReadme: () => apiRequest<{ readme: string | null }>("/api/organizations/readme"),
 };
 
 export const organizationsKey = "organizations" as const;
+export const organizationReadmeKey = "organization-readme" as const;

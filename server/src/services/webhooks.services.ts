@@ -1,8 +1,11 @@
 import crypto from 'crypto';
 import { RepositoriesServices } from './repositories.services';
 import { UserServices } from './users.services';
+import { IssuesServices } from './issues.services';
 import { PullRequestSB } from '../supabase/pullRequestSB';
+import { PullRequestReviewersSB } from '../supabase/pullRequestReviewersSB';
 import { ReviewCommentsServices } from './reviewComments.services';
+import { fanOut } from './notificationFanout';
 import { octokit } from '../lib/github';
 import { redisPub, REPO_EVENTS_CHANNEL } from '../lib/redis';
 import type { pull_request } from '../generated/prisma/client';
@@ -41,7 +44,7 @@ export const WebhooksServices = {
   },
 
   /** Publishes an event to Redis; sse.ts (running on every instance) picks this up and forwards it to whichever browsers are actually connected. */
-  async publish(event: { type: 'pull_request' | 'comment'; repoId: string; data: unknown }): Promise<void> {
+  async publish(event: { type: 'pull_request' | 'issue' | 'comment'; repoId: string; data: unknown }): Promise<void> {
     await redisPub.publish(REPO_EVENTS_CHANNEL, JSON.stringify(event));
   },
 
@@ -54,6 +57,9 @@ export const WebhooksServices = {
       case 'pull_request_review_comment':
         await this.handleInlineCommentEvent(payload);
         break;
+      case 'issues':
+        await this.handleIssueEvent(payload);
+        break;
       case 'issue_comment':
         // issue_comment fires for comments on both plain issues and PRs
         // (GitHub models a PR as a special kind of issue). Only
@@ -61,11 +67,24 @@ export const WebhooksServices = {
         // actually belongs to a PR, not a regular issue.
         if (payload.issue?.pull_request) {
           await this.handleTopLevelCommentEvent(payload);
+        } else {
+          await this.handleIssueCommentEvent(payload);
         }
         break;
       default:
         break;
     }
+  },
+
+  /**
+   * Who a PR event *directly* concerns: its author plus anyone whose review
+   * was requested. Used to set `is_direct`, which the UI surfaces above
+   * general repo activity — the difference between "something happened on
+   * your project" and "something is waiting on you".
+   */
+  async resolvePrDirectUserIds(pr: pull_request): Promise<string[]> {
+    const reviewers = await PullRequestReviewersSB.findByPrId(pr.id);
+    return [pr.author_id, ...reviewers.map((r) => r.user_id)];
   },
 
   /** Upserts a PR from a GitHub API/webhook PR object into our DB, upserting its author first. Shared by the pull_request event handler and the inline-comment handler (whose payload conveniently already includes the full PR object). */
@@ -116,7 +135,28 @@ export const WebhooksServices = {
   async handlePullRequestEvent(payload: any): Promise<void> {
     const repo = await RepositoriesServices.findByGithubRepoId(BigInt(payload.repository.id));
     const updated = await this.upsertPullRequestFromGithubData(repo.id, payload.pull_request);
+
+    // Two separate deliveries, deliberately: `publish` drives the repo-scoped
+    // live PR list (anyone with that repo's page open), while `fanOut` writes
+    // durable per-user notifications for team members and followers, which
+    // reach them anywhere in the app and survive a page reload.
     await this.publish({ type: 'pull_request', repoId: repo.id, data: updated });
+
+    const actor = await UserServices.upsertByGithubId({
+      github_id: payload.sender.id,
+      username: payload.sender.login,
+      avatar_url: payload.sender.avatar_url,
+    });
+
+    await fanOut({
+      type: 'pull_request',
+      repoId: repo.id,
+      actorId: actor.id,
+      title: `${payload.sender.login} ${payload.action} pull request #${updated.github_pr_number}: ${updated.title}`,
+      url: updated.github_url,
+      prId: updated.id,
+      directUserIds: await this.resolvePrDirectUserIds(updated),
+    });
   },
 
   async handleInlineCommentEvent(payload: any): Promise<void> {
@@ -145,6 +185,17 @@ export const WebhooksServices = {
     });
 
     await this.publish({ type: 'comment', repoId: repo.id, data: comment });
+
+    await fanOut({
+      type: 'comment',
+      repoId: repo.id,
+      actorId: author.id,
+      title: `${payload.comment.user.login} commented on #${pr.github_pr_number}: ${pr.title}`,
+      url: payload.comment.html_url ?? pr.github_url,
+      prId: pr.id,
+      commentId: comment.id,
+      directUserIds: await this.resolvePrDirectUserIds(pr),
+    });
   },
 
   async handleTopLevelCommentEvent(payload: any): Promise<void> {
@@ -169,5 +220,91 @@ export const WebhooksServices = {
     });
 
     await this.publish({ type: 'comment', repoId: repo.id, data: comment });
+
+    await fanOut({
+      type: 'comment',
+      repoId: repo.id,
+      actorId: author.id,
+      title: `${payload.comment.user.login} commented on #${pr.github_pr_number}: ${pr.title}`,
+      url: payload.comment.html_url ?? pr.github_url,
+      prId: pr.id,
+      commentId: comment.id,
+      directUserIds: await this.resolvePrDirectUserIds(pr),
+    });
+  },
+
+  /**
+   * Real issues (not PRs). Previously this event type was ignored entirely,
+   * so nothing in the app knew issues existed.
+   */
+  async handleIssueEvent(payload: any): Promise<void> {
+    const repo = await RepositoriesServices.findByGithubRepoId(BigInt(payload.repository.id));
+    const issue = await IssuesServices.upsertFromGithubData(repo.id, payload.issue);
+
+    // Repo-scoped publish keeps the open issues list live, the same way the
+    // PR list stays live; the fanOut below is the separate per-user inbox.
+    await this.publish({ type: 'issue', repoId: repo.id, data: issue });
+
+    const actor = await UserServices.upsertByGithubId({
+      github_id: payload.sender.id,
+      username: payload.sender.login,
+      avatar_url: payload.sender.avatar_url,
+    });
+
+    // An issue directly concerns its author and whoever it's assigned to —
+    // "assigned to you" is the clearest case of something needing action.
+    const directUserIds = [issue.author_id];
+    if (issue.assignee_id) directUserIds.push(issue.assignee_id);
+
+    await fanOut({
+      type: 'issue',
+      repoId: repo.id,
+      actorId: actor.id,
+      title: `${payload.sender.login} ${payload.action} issue #${issue.github_issue_number}: ${issue.title}`,
+      url: issue.github_url,
+      issueId: issue.id,
+      directUserIds,
+    });
+  },
+
+  async handleIssueCommentEvent(payload: any): Promise<void> {
+    const repo = await RepositoriesServices.findByGithubRepoId(BigInt(payload.repository.id));
+    const issue = await IssuesServices.ensureSynced(repo.id, repo.name, payload.issue.number);
+
+    const author = await UserServices.upsertByGithubId({
+      github_id: payload.comment.user.id,
+      username: payload.comment.user.login,
+      avatar_url: payload.comment.user.avatar_url,
+    });
+
+    // Stored in review_comments alongside PR comments, discriminated by
+    // issue_id vs pr_id rather than living in a separate table.
+    const comment = await ReviewCommentsServices.upsertByGithubCommentId({
+      github_comment_id: BigInt(payload.comment.id),
+      issue_id: issue.id,
+      pr_id: null,
+      author_id: author.id,
+      body: payload.comment.body,
+      file_path: null,
+      line_number: null,
+      review_id: null,
+      is_resolved: false,
+    });
+
+    await this.publish({ type: 'comment', repoId: repo.id, data: comment });
+
+    const directUserIds = [issue.author_id];
+    if (issue.assignee_id) directUserIds.push(issue.assignee_id);
+
+    await fanOut({
+      type: 'comment',
+      repoId: repo.id,
+      actorId: author.id,
+      title: `${payload.comment.user.login} commented on issue #${issue.github_issue_number}: ${issue.title}`,
+      url: payload.comment.html_url ?? issue.github_url,
+      issueId: issue.id,
+      commentId: comment.id,
+      directUserIds,
+    });
   },
 };
