@@ -9,6 +9,8 @@ const reviewComments_controller_1 = require("../../controller/reviewComments.con
 const router = express_1.default.Router();
 exports.reviewCommentsRouter = router;
 router.get('/all', reviewComments_controller_1.ReviewCommentsController.findAll);
+router.get('/counts', reviewComments_controller_1.ReviewCommentsController.countByPrIds);
+router.get('/issue-counts', reviewComments_controller_1.ReviewCommentsController.countByIssueIds);
 router.get('/:id', reviewComments_controller_1.ReviewCommentsController.findById);
 router.post('/create', reviewComments_controller_1.ReviewCommentsController.create);
 router.delete('/:id', reviewComments_controller_1.ReviewCommentsController.delete);

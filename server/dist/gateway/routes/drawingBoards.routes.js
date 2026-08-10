@@ -9,6 +9,7 @@ const drawingBoards_controller_1 = require("../../controller/drawingBoards.contr
 const router = express_1.default.Router();
 exports.drawingBoardsRouter = router;
 router.get('/all', drawingBoards_controller_1.DrawingBoardsController.findAll);
+router.get('/by-repo/:repoId', drawingBoards_controller_1.DrawingBoardsController.findByRepoId);
 router.get('/:id', drawingBoards_controller_1.DrawingBoardsController.findById);
 router.post('/create', drawingBoards_controller_1.DrawingBoardsController.create);
 router.delete('/:id', drawingBoards_controller_1.DrawingBoardsController.delete);

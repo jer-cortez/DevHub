@@ -20,5 +20,8 @@ exports.DrawingBoardsServices = {
     },
     async update(id, data) {
         return drawingBoardsSB_1.DrawingBoardsSB.update(id, data);
+    },
+    async findByRepoId(repoId) {
+        return drawingBoardsSB_1.DrawingBoardsSB.findByRepoId(repoId);
     }
 };

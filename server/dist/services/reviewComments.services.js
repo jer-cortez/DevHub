@@ -18,4 +18,19 @@ exports.ReviewCommentsServices = {
     async delete(id) {
         return reviewCommentsSB_1.ReviewCommentsSB.delete(id);
     },
+    async findByPrId(prId) {
+        return reviewCommentsSB_1.ReviewCommentsSB.findByPrId(prId);
+    },
+    async findByIssueId(issueId) {
+        return reviewCommentsSB_1.ReviewCommentsSB.findByIssueId(issueId);
+    },
+    async upsertByGithubCommentId(data) {
+        return reviewCommentsSB_1.ReviewCommentsSB.upsertByGithubCommentId(data);
+    },
+    async countByPrIds(prIds) {
+        return reviewCommentsSB_1.ReviewCommentsSB.countByPrIds(prIds);
+    },
+    async countByIssueIds(issueIds) {
+        return reviewCommentsSB_1.ReviewCommentsSB.countByIssueIds(issueIds);
+    },
 };

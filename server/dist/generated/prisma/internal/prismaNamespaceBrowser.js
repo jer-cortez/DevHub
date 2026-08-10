@@ -48,7 +48,7 @@ var __importStar = (this && this.__importStar) || (function () {
     };
 })();
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.JsonNullValueFilter = exports.NullsOrder = exports.QueryMode = exports.JsonNullValueInput = exports.SortOrder = exports.ReviewsScalarFieldEnum = exports.Review_commentsScalarFieldEnum = exports.RepositoriesScalarFieldEnum = exports.Repo_followersScalarFieldEnum = exports.Pull_request_reviewersScalarFieldEnum = exports.OrganizationsScalarFieldEnum = exports.Organization_membersScalarFieldEnum = exports.NotificationsScalarFieldEnum = exports.Drawing_boardsScalarFieldEnum = exports.Drawing_board_collaboratorsScalarFieldEnum = exports.Pull_requestScalarFieldEnum = exports.UserScalarFieldEnum = exports.TransactionIsolationLevel = exports.ModelName = exports.AnyNull = exports.JsonNull = exports.DbNull = exports.NullTypes = exports.Decimal = void 0;
+exports.JsonNullValueFilter = exports.NullsOrder = exports.QueryMode = exports.JsonNullValueInput = exports.SortOrder = exports.File_touchesScalarFieldEnum = exports.Pr_dependenciesScalarFieldEnum = exports.Team_membershipsScalarFieldEnum = exports.IssuesScalarFieldEnum = exports.ReviewsScalarFieldEnum = exports.Review_commentsScalarFieldEnum = exports.RepositoriesScalarFieldEnum = exports.Repo_followersScalarFieldEnum = exports.Pull_request_reviewersScalarFieldEnum = exports.OrganizationsScalarFieldEnum = exports.Organization_membersScalarFieldEnum = exports.NotificationsScalarFieldEnum = exports.Drawing_boardsScalarFieldEnum = exports.Drawing_board_collaboratorsScalarFieldEnum = exports.Pull_requestScalarFieldEnum = exports.UserScalarFieldEnum = exports.TransactionIsolationLevel = exports.ModelName = exports.AnyNull = exports.JsonNull = exports.DbNull = exports.NullTypes = exports.Decimal = void 0;
 const runtime = __importStar(require("@prisma/client/runtime/index-browser"));
 exports.Decimal = runtime.Decimal;
 exports.NullTypes = {
@@ -86,7 +86,11 @@ exports.ModelName = {
     repo_followers: 'repo_followers',
     repositories: 'repositories',
     review_comments: 'review_comments',
-    reviews: 'reviews'
+    reviews: 'reviews',
+    issues: 'issues',
+    team_memberships: 'team_memberships',
+    pr_dependencies: 'pr_dependencies',
+    file_touches: 'file_touches'
 };
 /*
  * Enums
@@ -103,7 +107,8 @@ exports.UserScalarFieldEnum = {
     username: 'username',
     avatar_url: 'avatar_url',
     email: 'email',
-    created_at: 'created_at'
+    created_at: 'created_at',
+    allow_review_suggestions: 'allow_review_suggestions'
 };
 exports.Pull_requestScalarFieldEnum = {
     id: 'id',
@@ -120,7 +125,14 @@ exports.Pull_requestScalarFieldEnum = {
     last_synced_at: 'last_synced_at',
     created_at: 'created_at',
     closed_at: 'closed_at',
-    merged_at: 'merged_at'
+    merged_at: 'merged_at',
+    head_sha: 'head_sha',
+    summary: 'summary',
+    summary_impact: 'summary_impact',
+    summary_sha: 'summary_sha',
+    summary_model: 'summary_model',
+    summary_truncated: 'summary_truncated',
+    summarized_at: 'summarized_at'
 };
 exports.Drawing_board_collaboratorsScalarFieldEnum = {
     id: 'id',
@@ -147,7 +159,14 @@ exports.NotificationsScalarFieldEnum = {
     pr_id: 'pr_id',
     board_id: 'board_id',
     is_read: 'is_read',
-    created_at: 'created_at'
+    created_at: 'created_at',
+    issue_id: 'issue_id',
+    comment_id: 'comment_id',
+    repo_id: 'repo_id',
+    actor_id: 'actor_id',
+    is_direct: 'is_direct',
+    title: 'title',
+    url: 'url'
 };
 exports.Organization_membersScalarFieldEnum = {
     id: 'id',
@@ -174,7 +193,10 @@ exports.Repo_followersScalarFieldEnum = {
     id: 'id',
     user_id: 'user_id',
     repo_id: 'repo_id',
-    followed_at: 'followed_at'
+    followed_at: 'followed_at',
+    notify_pull_requests: 'notify_pull_requests',
+    notify_issues: 'notify_issues',
+    notify_comments: 'notify_comments'
 };
 exports.RepositoriesScalarFieldEnum = {
     id: 'id',
@@ -197,7 +219,8 @@ exports.Review_commentsScalarFieldEnum = {
     file_path: 'file_path',
     line_number: 'line_number',
     is_resolved: 'is_resolved',
-    created_at: 'created_at'
+    created_at: 'created_at',
+    issue_id: 'issue_id'
 };
 exports.ReviewsScalarFieldEnum = {
     id: 'id',
@@ -207,6 +230,45 @@ exports.ReviewsScalarFieldEnum = {
     decision: 'decision',
     body: 'body',
     submitted_at: 'submitted_at'
+};
+exports.IssuesScalarFieldEnum = {
+    id: 'id',
+    github_issue_id: 'github_issue_id',
+    github_issue_number: 'github_issue_number',
+    repo_id: 'repo_id',
+    author_id: 'author_id',
+    assignee_id: 'assignee_id',
+    title: 'title',
+    body: 'body',
+    status: 'status',
+    github_url: 'github_url',
+    last_synced_at: 'last_synced_at',
+    created_at: 'created_at',
+    closed_at: 'closed_at'
+};
+exports.Team_membershipsScalarFieldEnum = {
+    id: 'id',
+    user_id: 'user_id',
+    repo_id: 'repo_id',
+    joined_at: 'joined_at'
+};
+exports.Pr_dependenciesScalarFieldEnum = {
+    id: 'id',
+    blocked_pr_id: 'blocked_pr_id',
+    blocking_pr_id: 'blocking_pr_id',
+    note: 'note',
+    created_by: 'created_by',
+    created_at: 'created_at'
+};
+exports.File_touchesScalarFieldEnum = {
+    id: 'id',
+    user_id: 'user_id',
+    repo_id: 'repo_id',
+    pr_id: 'pr_id',
+    file_path: 'file_path',
+    segments: 'segments',
+    role: 'role',
+    touched_at: 'touched_at'
 };
 exports.SortOrder = {
     asc: 'asc',

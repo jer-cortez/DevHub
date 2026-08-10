@@ -9,3 +9,5 @@ const code_controller_1 = require("../../controller/code.controller");
 const router = express_1.default.Router();
 exports.codeRouter = router;
 router.get('/:repoId/contents', code_controller_1.codeController.getContents);
+router.get('/:repoId/branches', code_controller_1.codeController.listBranches);
+router.get('/:repoId/last-commit', code_controller_1.codeController.getLastCommit);

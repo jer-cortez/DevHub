@@ -17,5 +17,8 @@ exports.DrawingBoardsSB = {
     },
     async update(id, data) {
         return prismaClient_1.prisma.drawing_boards.update({ where: { id }, data });
+    },
+    async findByRepoId(repoId) {
+        return prismaClient_1.prisma.drawing_boards.findMany({ where: { repo_id: repoId } });
     }
 };

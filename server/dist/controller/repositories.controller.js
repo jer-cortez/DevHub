@@ -51,4 +51,14 @@ exports.RepositoriesController = {
             res.status(500).json({ error: 'Failed to sync repositories' });
         }
     },
+    async listActivity(_req, res) {
+        try {
+            const activity = await repositories_services_1.RepositoriesServices.listActivity();
+            res.status(200).json({ data: activity });
+        }
+        catch (error) {
+            console.error('Failed to fetch repository activity:', error);
+            res.status(500).json({ error: 'Failed to fetch repository activity' });
+        }
+    },
 };

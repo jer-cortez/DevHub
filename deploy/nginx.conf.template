@@ -1,0 +1,112 @@
+# nginx front door for the whole app on one EC2 instance.
+#
+# Substitute ${DOMAIN} and install (see deploy/README.md):
+#   envsubst '${DOMAIN}' < nginx.conf.template | sudo tee /etc/nginx/sites-available/github-extension
+#
+# Both apps are served from a single hostname, which is deliberate: the
+# browser then calls the API same-origin, so there is no CORS preflight on
+# every request and the WebSocket inherits the page's TLS as wss:// without
+# any separate certificate. NEXT_PUBLIC_API_URL is just https://${DOMAIN}.
+#
+#   /            -> Next.js   (127.0.0.1:3000)
+#   /api/, /ws/  -> Express   (127.0.0.1:8080)
+#
+# Neither Node process listens on a public interface; nginx is the only thing
+# bound to 0.0.0.0, so the security group only ever needs 80, 443, and 22.
+
+server {
+    listen 80;
+    listen [::]:80;
+    server_name ${DOMAIN};
+
+    # Certbot writes its challenge files here; this must stay reachable over
+    # plain HTTP or renewals fail once the redirect below is in place.
+    location /.well-known/acme-challenge/ {
+        root /var/www/certbot;
+    }
+
+    location / {
+        return 301 https://$host$request_uri;
+    }
+}
+
+server {
+    listen 443 ssl;
+    listen [::]:443 ssl;
+    http2 on;
+    server_name ${DOMAIN};
+
+    ssl_certificate     /etc/letsencrypt/live/${DOMAIN}/fullchain.pem;
+    ssl_certificate_key /etc/letsencrypt/live/${DOMAIN}/privkey.pem;
+    include /etc/letsencrypt/options-ssl-nginx.conf;
+    ssl_dhparam /etc/letsencrypt/ssl-dhparams.pem;
+
+    # GitHub webhook payloads carry full commit and PR bodies; the 1MB default
+    # rejects large ones with a 413 that surfaces as a mystery failed delivery.
+    client_max_body_size 25M;
+
+    # ---------------------------------------------------------------------
+    # API + server-sent events.
+    #
+    # proxy_buffering off is the load-bearing line. With buffering on, nginx
+    # holds SSE frames until its buffer fills, so live PR updates and
+    # notifications arrive in delayed batches or not at all. The long
+    # read timeout keeps an idle event stream from being culled between
+    # heartbeats.
+    # ---------------------------------------------------------------------
+    location /api/ {
+        proxy_pass http://127.0.0.1:8080;
+        proxy_http_version 1.1;
+
+        proxy_set_header Host              $host;
+        proxy_set_header X-Real-IP         $remote_addr;
+        proxy_set_header X-Forwarded-For   $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+
+        proxy_buffering off;
+        proxy_cache off;
+        proxy_read_timeout 1h;
+    }
+
+    # ---------------------------------------------------------------------
+    # Drawing-board WebSockets. The Upgrade/Connection pair is what turns a
+    # proxied request into a socket; without it the handshake returns 200 and
+    # the client sees the connection close immediately.
+    # ---------------------------------------------------------------------
+    location /ws/ {
+        proxy_pass http://127.0.0.1:8080;
+        proxy_http_version 1.1;
+
+        proxy_set_header Upgrade    $http_upgrade;
+        proxy_set_header Connection "upgrade";
+        proxy_set_header Host       $host;
+        proxy_set_header X-Real-IP  $remote_addr;
+
+        # Boards can sit idle while someone thinks; a short timeout here
+        # drops the socket mid-session and loses collaborative state.
+        proxy_read_timeout 1h;
+        proxy_send_timeout 1h;
+    }
+
+    location = /health {
+        proxy_pass http://127.0.0.1:8080/health;
+        access_log off;
+    }
+
+    # ---------------------------------------------------------------------
+    # Everything else is the Next.js app.
+    # ---------------------------------------------------------------------
+    location / {
+        proxy_pass http://127.0.0.1:3000;
+        proxy_http_version 1.1;
+
+        proxy_set_header Host              $host;
+        proxy_set_header X-Real-IP         $remote_addr;
+        proxy_set_header X-Forwarded-For   $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+
+        # Next's dev/HMR and streaming SSR both use an upgrade path.
+        proxy_set_header Upgrade    $http_upgrade;
+        proxy_set_header Connection "upgrade";
+    }
+}

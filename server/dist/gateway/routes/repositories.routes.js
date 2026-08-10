@@ -10,6 +10,7 @@ const router = express_1.default.Router();
 exports.repositoriesRouter = router;
 router.get('/all', repositories_controller_1.RepositoriesController.findAll);
 router.post('/sync', repositories_controller_1.RepositoriesController.sync);
+router.get('/activity', repositories_controller_1.RepositoriesController.listActivity);
 router.get('/:id', repositories_controller_1.RepositoriesController.findById);
 router.post('/create', repositories_controller_1.RepositoriesController.create);
 router.delete('/:id', repositories_controller_1.RepositoriesController.delete);

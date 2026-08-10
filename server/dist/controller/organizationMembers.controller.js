@@ -41,4 +41,23 @@ exports.OrganizationMembersController = {
             res.status(500).json({ error: 'Failed to delete organization member' });
         }
     },
+    async findAllWithUserInfo(_req, res) {
+        try {
+            const members = await organizationMembers_services_1.OrganizationMembersServices.findAllWithUserInfo();
+            res.status(200).json({ data: members });
+        }
+        catch (error) {
+            res.status(500).json({ error: 'Failed to fetch organization members' });
+        }
+    },
+    async sync(_req, res) {
+        try {
+            const members = await organizationMembers_services_1.OrganizationMembersServices.syncFromGithub();
+            res.status(200).json({ data: members });
+        }
+        catch (error) {
+            console.error('Failed to sync organization members from GitHub:', error);
+            res.status(500).json({ error: 'Failed to sync organization members' });
+        }
+    },
 };

@@ -15,6 +15,9 @@ exports.UserSB = {
     async delete(id) {
         return prismaClient_1.prisma.user.delete({ where: { id } });
     },
+    async findByIds(ids) {
+        return prismaClient_1.prisma.user.findMany({ where: { id: { in: ids } } });
+    },
     async upsertByGithubId(data) {
         return prismaClient_1.prisma.user.upsert({
             where: { github_id: data.github_id },

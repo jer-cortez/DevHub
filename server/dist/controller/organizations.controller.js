@@ -41,4 +41,13 @@ exports.OrganizationsController = {
             res.status(500).json({ error: 'Failed to delete organization' });
         }
     },
+    async getReadme(_req, res) {
+        try {
+            const readme = await organizations_services_1.OrganizationsServices.getReadme();
+            res.status(200).json({ data: { readme } });
+        }
+        catch (error) {
+            res.status(500).json({ error: 'Failed to fetch organization README' });
+        }
+    },
 };

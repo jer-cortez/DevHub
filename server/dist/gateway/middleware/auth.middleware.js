@@ -1,7 +1,6 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.AuthMiddleware = void 0;
-const supabaseClient_1 = require("../../config/supabaseClient");
 const auth_services_1 = require("../../services/auth.services");
 const AuthMiddleware = async (req, res, next) => {
     const token = req.headers.authorization?.replace("Bearer ", "");
@@ -9,13 +8,11 @@ const AuthMiddleware = async (req, res, next) => {
         res.status(401).json({ error: "No Token Provided" });
         return;
     }
-    const { data, error } = await supabaseClient_1.supabaseAdmin.auth.getUser(token);
-    if (error || !data.user) {
-        console.error('Error verifying token:', error);
+    const user = await auth_services_1.AuthHandler.verifySupabaseToken(token);
+    if (!user) {
         res.status(401).json({ error: "Invaild or expired token" });
         return;
     }
-    const user = data.user;
     const username = user.user_metadata.user_name;
     const isMember = await auth_services_1.AuthHandler.verifyOrgMembership(username, token);
     if (!isMember) {

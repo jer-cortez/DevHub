@@ -31,15 +31,38 @@ import { wss } from './lib/boardSocket';
 (BigInt.prototype as any).toJSON = function () { return this.toString(); };
 
 const app = express();
-const PORT = 8080;
+
+// Every managed host (Railway, Render, Fly, Heroku) assigns a port and
+// injects it as PORT — an app that binds a fixed port there is started,
+// reported healthy, and never receives a single request. 8080 stays as the
+// local default.
+const PORT = Number(process.env.PORT) || 8080;
+
 const server = http.createServer(app)
 
-app.use(cors());
+// Restricted to the deployed client when CLIENT_ORIGIN is set, open in
+// development where it isn't. Auth travels as a Bearer token rather than a
+// cookie, so this isn't load-bearing for security — it's to stop other
+// origins driving the API from a user's browser.
+app.use(cors({ origin: process.env.CLIENT_ORIGIN || true }));
 // Compresses response bodies (gzip) above the default 1kb threshold — pure
 // win for anything returning a real payload (repo listings, code contents,
 // PR lists), and doesn't touch incoming request bodies, so it's safe to
 // apply globally, including in front of the webhook route below.
-app.use(compression());
+// Server-sent events must bypass compression. The middleware buffers writes
+// until it has enough bytes to decide whether compressing is worthwhile, so
+// small SSE frames sit in that buffer instead of reaching the browser —
+// live PR updates and notifications arrive late, or in batches when a
+// heartbeat finally pushes the buffer over the threshold. Behind a hosting
+// proxy this gets worse, not better.
+app.use(
+  compression({
+    filter: (req, res) =>
+      res.getHeader('Content-Type') === 'text/event-stream'
+        ? false
+        : compression.filter(req, res),
+  })
+);
 
 // Mounted before express.json() and AuthMiddleware, deliberately:
 // - GitHub is not a Supabase-authenticated user, so this can't sit behind
@@ -51,6 +74,14 @@ app.use(compression());
 app.use('/api/webhooks', webhooksRouter);
 
 app.use(express.json());
+
+// Unauthenticated and dependency-free, for platform health checks. Kept
+// deliberately dumb: if it also probed Postgres and Redis, a slow database
+// would make the host consider the process dead and restart it, turning a
+// degraded API into a crash loop.
+app.get('/health', (_req, res) => {
+  res.status(200).json({ status: 'ok', uptime: process.uptime() });
+});
 
 app.get('/api/home', (req, res) => {
   res.json({ message: 'Hello World!', pet: ['dog', 'cat', 'bird'] });

@@ -2,6 +2,7 @@
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.PullRequestController = void 0;
 const pullRequest_services_1 = require("../services/pullRequest.services");
+const prSummary_services_1 = require("../services/prSummary.services");
 exports.PullRequestController = {
     async findAll(_req, res) {
         try {
@@ -49,6 +50,25 @@ exports.PullRequestController = {
         }
         catch (error) {
             res.status(500).json({ error: 'Failed to fetch pull requests for repository' });
+        }
+    },
+    async summarize(req, res) {
+        try {
+            const id = req.params.id;
+            const pr = await prSummary_services_1.PrSummaryServices.getOrGenerate(id);
+            res.status(200).json({
+                data: {
+                    summary: pr.summary,
+                    impact: pr.summary_impact,
+                    truncated: pr.summary_truncated,
+                    model: pr.summary_model,
+                    summarized_at: pr.summarized_at,
+                },
+            });
+        }
+        catch (error) {
+            console.error('Failed to summarize pull request:', error);
+            res.status(500).json({ error: 'Failed to summarize pull request' });
         }
     },
     async sync(req, res) {

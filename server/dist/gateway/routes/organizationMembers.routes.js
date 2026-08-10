@@ -9,6 +9,8 @@ const organizationMembers_controller_1 = require("../../controller/organizationM
 const router = express_1.default.Router();
 exports.orgMembersRouter = router;
 router.get('/all', organizationMembers_controller_1.OrganizationMembersController.findAll);
+router.get('/members', organizationMembers_controller_1.OrganizationMembersController.findAllWithUserInfo);
+router.post('/sync', organizationMembers_controller_1.OrganizationMembersController.sync);
 router.get('/:id', organizationMembers_controller_1.OrganizationMembersController.findById);
 router.post('/create', organizationMembers_controller_1.OrganizationMembersController.create);
 router.delete('/:id', organizationMembers_controller_1.OrganizationMembersController.delete);

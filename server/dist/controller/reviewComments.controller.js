@@ -41,4 +41,26 @@ exports.ReviewCommentsController = {
             res.status(500).json({ error: 'Failed to delete review comment' });
         }
     },
+    /** Comment counts for multiple PRs at once, e.g. GET /counts?prIds=a,b,c — used to populate the PR list's comment-count badges in one request instead of one per PR. */
+    async countByPrIds(req, res) {
+        try {
+            const prIds = (req.query.prIds ?? '').split(',').filter(Boolean);
+            const counts = await reviewComments_services_1.ReviewCommentsServices.countByPrIds(prIds);
+            res.status(200).json({ data: counts });
+        }
+        catch (error) {
+            res.status(500).json({ error: 'Failed to fetch comment counts' });
+        }
+    },
+    /** Same, for issues — GET /issue-counts?issueIds=a,b,c. */
+    async countByIssueIds(req, res) {
+        try {
+            const issueIds = (req.query.issueIds ?? '').split(',').filter(Boolean);
+            const counts = await reviewComments_services_1.ReviewCommentsServices.countByIssueIds(issueIds);
+            res.status(200).json({ data: counts });
+        }
+        catch (error) {
+            res.status(500).json({ error: 'Failed to fetch issue comment counts' });
+        }
+    },
 };

@@ -24,4 +24,7 @@ exports.UserServices = {
     async upsertByGithubId(data) {
         return userSB_1.UserSB.upsertByGithubId(data);
     },
+    async findByIds(ids) {
+        return userSB_1.UserSB.findByIds(ids);
+    },
 };
