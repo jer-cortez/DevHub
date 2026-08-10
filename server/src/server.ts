@@ -1,3 +1,13 @@
+// Must run before anything that might do a DNS lookup — in particular
+// before prismaClient.ts constructs its pg Pool (imported transitively via
+// the routers below). Supabase's Postgres hostname resolves to both an IPv4
+// and IPv6 address; Node's default DNS ordering can prefer the IPv6 one,
+// and on a VPC subnet without IPv6 routing (the AWS default) that fails
+// with ENETUNREACH while the IPv4 address would have connected fine. This
+// tells Node to always try IPv4 first instead.
+import dns from 'node:dns';
+dns.setDefaultResultOrder('ipv4first');
+
 import express from 'express';
 import cors from 'cors';
 import compression from 'compression';
