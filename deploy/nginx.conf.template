@@ -38,8 +38,19 @@ server {
 
     ssl_certificate     /etc/letsencrypt/live/${DOMAIN}/fullchain.pem;
     ssl_certificate_key /etc/letsencrypt/live/${DOMAIN}/privkey.pem;
-    include /etc/letsencrypt/options-ssl-nginx.conf;
-    ssl_dhparam /etc/letsencrypt/ssl-dhparams.pem;
+
+    # Normally `include /etc/letsencrypt/options-ssl-nginx.conf` +
+    # `ssl_dhparam .../ssl-dhparams.pem` here — but those two files are only
+    # written by certbot's nginx plugin (`certbot --nginx` / `certbot
+    # install`), and setup.sh deliberately uses `certonly --standalone`
+    # instead (nginx isn't configured yet at cert-issuance time, so the
+    # plugin can't run). Spelling out modern TLS settings directly avoids
+    # depending on files certbot never creates in this flow. No explicit
+    # dhparam file is needed: nginx's default cipher list is ECDHE-based,
+    # which uses elliptic-curve rather than classic Diffie-Hellman key
+    # exchange.
+    ssl_protocols TLSv1.2 TLSv1.3;
+    ssl_prefer_server_ciphers off;
 
     # GitHub webhook payloads carry full commit and PR bodies; the 1MB default
     # rejects large ones with a 413 that surfaces as a mystery failed delivery.
