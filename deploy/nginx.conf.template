@@ -56,6 +56,18 @@ server {
     # rejects large ones with a 413 that surfaces as a mystery failed delivery.
     client_max_body_size 25M;
 
+    # Supabase's SSR auth client sets the session as one or more Set-Cookie
+    # headers carrying the access/refresh JWTs, on the /auth/callback
+    # redirect response. That routinely exceeds nginx's default response
+    # header buffer (4-8k depending on platform), which fails as "upstream
+    # sent too big header" — a 502 with nothing useful in the app's own
+    # logs, since nginx never got far enough to hand the response back.
+    # Set at server level so every proxied location (/, /api/, /ws/) is
+    # covered, not just the one that happened to trigger it first.
+    proxy_buffer_size 32k;
+    proxy_buffers 4 32k;
+    proxy_busy_buffers_size 64k;
+
     # ---------------------------------------------------------------------
     # API + server-sent events.
     #
