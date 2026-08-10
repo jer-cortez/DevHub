@@ -1,14 +1,26 @@
 "use client";
 
-import { useState } from "react";
+import { useCallback, useState } from "react";
 import Link from "next/link";
 import useSWR from "swr";
 import { RepositoriesAPI, repositoriesKey } from "@/API/RepositoriesAPI";
+import { useRepoEvents, ORG_EVENTS_KEY, type RepoEvent } from "@/hooks/useRepoEvents";
 
 export default function RepositoriesList() {
   const { data: repositories, error, isLoading, mutate } = useSWR(repositoriesKey, RepositoriesAPI.findAll);
   const [syncing, setSyncing] = useState(false);
   const [syncError, setSyncError] = useState<string | null>(null);
+
+  // Org-wide, not repo-scoped — a repo being created/renamed/archived/
+  // deleted isn't "inside" any one repo's channel, so this subscribes to
+  // the sentinel key instead of a real repoId (see useRepoEvents.ts).
+  const handleRepoEvent = useCallback(
+    (event: RepoEvent) => {
+      if (event.type === "repository") mutate();
+    },
+    [mutate]
+  );
+  useRepoEvents(ORG_EVENTS_KEY, handleRepoEvent);
 
   const handleSync = async () => {
     setSyncing(true);

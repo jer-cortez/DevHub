@@ -4,13 +4,26 @@ import { redisSub, REPO_EVENTS_CHANNEL } from './redis';
 /**
  * Shape of an event broadcast to browsers watching a repo's live updates.
  * `type` distinguishes what changed so the frontend knows how to react;
- * `data` is the raw upserted row (a pull_request or review_comments record).
+ * `data` is the raw upserted row (a pull_request, issue, review_comments,
+ * or repositories record).
  */
 export interface RepoEvent {
-  type: 'pull_request' | 'issue' | 'comment';
+  type: 'pull_request' | 'issue' | 'comment' | 'repository';
   repoId: string;
   data: unknown;
 }
+
+/**
+ * Sentinel `repoId` for events that concern the whole org rather than one
+ * repo — currently just `repository` events (a repo being added, renamed,
+ * archived, or removed), which the org-wide Repositories list needs to hear
+ * about even though it isn't scoped to any single repo. Reuses the same
+ * per-repo client registry and Redis channel below rather than standing up
+ * a second, near-identical pub/sub path — nothing here actually requires
+ * the key to be a real repo id, it's just a routing key. Safe to use a
+ * short literal: real repoIds are UUIDs, so this can never collide with one.
+ */
+export const ORG_EVENTS_KEY = 'org';
 
 /**
  * Per-instance registry of locally-connected SSE clients, keyed by repoId.

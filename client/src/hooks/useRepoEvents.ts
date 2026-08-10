@@ -5,10 +5,20 @@ import { createClient } from "@/lib/supabase/client";
 const API_URL = process.env.NEXT_PUBLIC_API_URL!;
 
 export interface RepoEvent {
-  type: "pull_request" | "issue" | "comment";
+  type: "pull_request" | "issue" | "comment" | "repository";
   repoId: string;
   data: unknown;
 }
+
+/**
+ * Sentinel repoId for org-wide events (currently just `repository` —
+ * created/renamed/archived/deleted) that don't belong to any single repo's
+ * channel, e.g. the Repositories list itself. Must match the server's
+ * ORG_EVENTS_KEY in server/src/lib/sse.ts exactly — there's no shared
+ * module between the two projects to import this from, so it's duplicated
+ * here deliberately rather than silently drifting.
+ */
+export const ORG_EVENTS_KEY = "org";
 
 /**
  * Subscribes to a repo's live event stream (PR updates, new comments) over

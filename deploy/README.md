@@ -110,11 +110,15 @@ This is the part you came here for. GitHub → your org or repo →
 | Content type | `application/json` |
 | Secret | the exact value of `GITHUB_WEBHOOK_SECRET` in `server/.env` |
 | SSL verification | Enabled — the cert from step 1 is real, so leave this on |
-| Which events | **Let me select individual events** → check **Pull requests**, **Issues**, **Issue comments**, **Pull request review comments** |
+| Which events | **Let me select individual events** → check **Pull requests**, **Issues**, **Issue comments**, **Pull request review comments**, **Repositories** |
 
-Those four map exactly to the `switch` in
+Those five map exactly to the `switch` in
 `server/src/services/webhooks.services.ts`'s `handleEvent` — anything else
 GitHub sends is silently ignored, so there's no benefit to checking more.
+**Repositories** is what keeps the Repositories page's list live (new repo
+created, renamed, archived, deleted) — if you set the webhook up before this
+was added, go back and check that one box on the existing webhook rather
+than creating a second one.
 
 If your GitHub token's permission probe shows `403` on `repo webhooks:
 read` / `org webhooks: read`, that's a token-permission issue for

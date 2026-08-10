@@ -1,14 +1,17 @@
 import crypto from 'crypto';
 import { RepositoriesServices } from './repositories.services';
+import { OrganizationsServices } from './organizations.services';
 import { UserServices } from './users.services';
 import { IssuesServices } from './issues.services';
 import { PullRequestSB } from '../supabase/pullRequestSB';
 import { PullRequestReviewersSB } from '../supabase/pullRequestReviewersSB';
+import { RepositoriesSB } from '../supabase/repositoriesSB';
 import { ReviewCommentsServices } from './reviewComments.services';
 import { fanOut } from './notificationFanout';
 import { ExpertiseServices } from './expertise.services';
 import { octokit } from '../lib/github';
 import { redisPub, REPO_EVENTS_CHANNEL } from '../lib/redis';
+import { ORG_EVENTS_KEY } from '../lib/sse';
 import type { pull_request } from '../generated/prisma/client';
 
 const WEBHOOK_SECRET = process.env.GITHUB_WEBHOOK_SECRET!;
@@ -45,7 +48,11 @@ export const WebhooksServices = {
   },
 
   /** Publishes an event to Redis; sse.ts (running on every instance) picks this up and forwards it to whichever browsers are actually connected. */
-  async publish(event: { type: 'pull_request' | 'issue' | 'comment'; repoId: string; data: unknown }): Promise<void> {
+  async publish(event: {
+    type: 'pull_request' | 'issue' | 'comment' | 'repository';
+    repoId: string;
+    data: unknown;
+  }): Promise<void> {
     await redisPub.publish(REPO_EVENTS_CHANNEL, JSON.stringify(event));
   },
 
@@ -60,6 +67,9 @@ export const WebhooksServices = {
         break;
       case 'issues':
         await this.handleIssueEvent(payload);
+        break;
+      case 'repository':
+        await this.handleRepositoryEvent(payload);
         break;
       case 'issue_comment':
         // issue_comment fires for comments on both plain issues and PRs
@@ -323,5 +333,52 @@ export const WebhooksServices = {
       commentId: comment.id,
       directUserIds,
     });
+  },
+
+  /**
+   * A repo being created, edited, renamed, archived/unarchived, made
+   * public/private, transferred, or deleted. Unlike every other handler
+   * here, this isn't scoped to one repo's SSE channel — the Repositories
+   * list shows every repo at once, with no single repoId to subscribe to —
+   * so it publishes to the ORG_EVENTS_KEY sentinel instead (see
+   * lib/sse.ts), reusing the same per-repo channel machinery rather than
+   * standing up a parallel one.
+   *
+   * No fanOut: there's no natural "this directly concerns you" user set for
+   * a repo-level change the way there is for a PR or issue, and a live list
+   * update is what was actually asked for.
+   */
+  async handleRepositoryEvent(payload: any): Promise<void> {
+    // Mirrors RepositoriesServices.syncFromGithub's exclusion — the .github
+    // repo holds the org profile README, not a real project, so it's never
+    // synced or shown anywhere real repos are.
+    if (payload.repository.name === '.github') return;
+
+    if (payload.action === 'deleted') {
+      const existing = await RepositoriesSB.findByGithubRepoId(BigInt(payload.repository.id));
+      if (!existing) return; // never synced locally — nothing to remove
+      await RepositoriesSB.delete(existing.id);
+      await this.publish({ type: 'repository', repoId: ORG_EVENTS_KEY, data: existing });
+      return;
+    }
+
+    // created, edited, renamed, archived, unarchived, publicized,
+    // privatized, transferred — all just mean "upsert the current state".
+    const org = await OrganizationsServices.upsertByGithubOrgId({
+      github_org_id: BigInt(payload.organization.id),
+      name: payload.organization.login,
+      avatar_url: payload.organization.avatar_url,
+    });
+
+    const repo = await RepositoriesServices.upsertByGithubRepoId({
+      github_repo_id: BigInt(payload.repository.id),
+      org_id: org.id,
+      name: payload.repository.name,
+      description: payload.repository.description ?? '',
+      is_private: payload.repository.private,
+      default_branch: payload.repository.default_branch ?? 'main',
+    });
+
+    await this.publish({ type: 'repository', repoId: ORG_EVENTS_KEY, data: repo });
   },
 };
