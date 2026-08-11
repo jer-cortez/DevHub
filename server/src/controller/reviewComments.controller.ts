@@ -1,5 +1,6 @@
 import type { Request, Response } from 'express';
 import { ReviewCommentsServices } from '../services/reviewComments.services';
+import { parseUuidListQuery } from '../schemas/common.schemas';
 
 export const ReviewCommentsController = {
   async findAll(_req: Request, res: Response) {
@@ -39,7 +40,7 @@ export const ReviewCommentsController = {
   /** Comment counts for multiple PRs at once, e.g. GET /counts?prIds=a,b,c — used to populate the PR list's comment-count badges in one request instead of one per PR. */
   async countByPrIds(req: Request, res: Response) {
     try {
-      const prIds = ((req.query.prIds as string) ?? '').split(',').filter(Boolean);
+      const prIds = parseUuidListQuery(req.query.prIds);
       const counts = await ReviewCommentsServices.countByPrIds(prIds);
       res.status(200).json({ data: counts });
     } catch (error) {
@@ -49,7 +50,7 @@ export const ReviewCommentsController = {
   /** Same, for issues — GET /issue-counts?issueIds=a,b,c. */
   async countByIssueIds(req: Request, res: Response) {
     try {
-      const issueIds = ((req.query.issueIds as string) ?? '').split(',').filter(Boolean);
+      const issueIds = parseUuidListQuery(req.query.issueIds);
       const counts = await ReviewCommentsServices.countByIssueIds(issueIds);
       res.status(200).json({ data: counts });
     } catch (error) {

@@ -10,7 +10,11 @@ export const NotificationsController = {
   async findMine(req: Request, res: Response) {
     try {
       const user = await resolveLocalUser(req);
-      const limit = req.query.limit ? Number(req.query.limit) : undefined;
+      const requestedLimit = Number(req.query.limit);
+      const limit =
+        Number.isInteger(requestedLimit) && requestedLimit > 0
+          ? Math.min(requestedLimit, 100)
+          : undefined;
 
       const [notifications, unreadCount] = await Promise.all([
         NotificationsServices.findForUser(user.id, limit),

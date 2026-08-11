@@ -1,5 +1,7 @@
 import express from 'express';
 import { NotificationsController } from '../../controller/notifications.controller';
+import { validateParams } from '../middleware/validate.middleware';
+import { idParams } from '../../schemas/common.schemas';
 
 const router = express.Router();
 
@@ -10,6 +12,6 @@ const router = express.Router();
 router.get('/mine', NotificationsController.findMine);
 router.get('/stream', NotificationsController.subscribe);
 router.post('/read-all', NotificationsController.markAllRead);
-router.post('/:id/read', NotificationsController.markRead);
+router.post('/:id/read', validateParams(idParams), NotificationsController.markRead);
 
 export { router as notificationsRouter };

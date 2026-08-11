@@ -1,6 +1,7 @@
 import type { Request, Response } from 'express';
 import { PrDependenciesServices, DependencyError } from '../services/prDependencies.services';
 import { resolveLocalUser } from '../services/currentUser.services';
+import { parseUuidListQuery } from '../schemas/common.schemas';
 
 export const PrDependenciesController = {
   async getForPr(req: Request, res: Response) {
@@ -58,9 +59,7 @@ export const PrDependenciesController = {
 
   async blockedCounts(req: Request, res: Response) {
     try {
-      const ids = String(req.query.prIds ?? '')
-        .split(',')
-        .filter(Boolean);
+      const ids = parseUuidListQuery(req.query.prIds);
       res.status(200).json({ data: await PrDependenciesServices.blockedCounts(ids) });
     } catch (error) {
       console.error('Failed to fetch blocked counts:', error);
