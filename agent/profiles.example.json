@@ -1,0 +1,17 @@
+{
+  "YOUR_ORG/YOUR_REPO": {
+    "version": "1",
+    "enabled": true,
+    "node_image": "devhub-audit-node:22",
+    "projects": [
+      {
+        "directory": ".",
+        "rebuild": [],
+        "checks": [
+          { "name": "tests", "argv": ["npm", "test", "--", "--run"] },
+          { "name": "typecheck", "argv": ["npm", "run", "typecheck"] }
+        ]
+      }
+    ]
+  }
+}

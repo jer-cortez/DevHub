@@ -18,6 +18,14 @@ every repo, not just the one they happen to be watching.
 - **AI PR summaries** — a plain-language summary of what a PR changes and
   how it fits into the wider repo, generated from the diff plus repo context,
   cached per commit so re-reading an unchanged PR is free.
+- **Opt-in agentic PR audits** — a Python/LangGraph worker analyzes pinned
+  TypeScript/JavaScript revisions, runs configured npm checks in isolated
+  Docker containers, tries bounded candidate fixes, and publishes
+  evidence-backed GitHub reviews. LangGraph runs with a local Postgres
+  checkpointer and does not require a hosted account. Includes a dashboard-only
+  rollout gate.
+  See [auditor setup and operation](agent/README.md) for the GitHub App,
+  migration, profiles, and separate runner required to enable it.
 - **Onboarding mode** — when someone reviews a repo they've never touched
   before, they get an automatic orientation: how that part of the codebase
   works, the files worth reading first, related system-design diagrams, and
@@ -49,9 +57,10 @@ deploy/   nginx + pm2 + Let's Encrypt provisioning for a single EC2 instance
   calls, and pub/sub so SSE events fan out correctly across multiple server
   instances.
 - **Auth**: Supabase Auth via GitHub OAuth.
-- **AI**: Claude API (Anthropic) for PR summaries, onboarding overviews, and
-  reviewer-suggestion evidence — with prompt caching on repo context and
-  response caching per commit SHA to keep cost down.
+- **AI**: Claude API (Anthropic) for the existing server-side PR summaries,
+  onboarding overviews, and reviewer-suggestion evidence. The opt-in auditor
+  defaults separately to the OpenAI Responses API using `gpt-5.6-sol` with low
+  reasoning effort; Anthropic remains an explicit auditor alternative.
 - **Sync**: a GitHub webhook keeps everything live; each entity (PRs,
   issues, reviews, repositories) also has a manual "sync from GitHub" path
   for full backfills.
@@ -69,8 +78,12 @@ npm run dev                                     # runs both apps concurrently
 ```
 
 `server/.env` needs Supabase credentials, a Postgres `DATABASE_URL`, a
-GitHub personal access token + org name, a webhook secret, a Redis URL, and
-an Anthropic API key. See `server/.env.template` for the full list.
+GitHub personal access token + org name, a webhook secret, a Redis URL, and a
+valid Anthropic API key for the existing server-side AI features. Local auditor
+development may also store `OPENAI_API_KEY` there because the worker reads it
+as a non-overriding fallback after `agent/.env`. Production auditor credentials
+belong in its root-owned worker environment file. See
+[`agent/README.md`](agent/README.md) for provider configuration.
 
 Database schema changes live as hand-written, idempotent SQL in
 `server/prisma/sql/`, applied in order and self-recorded in a

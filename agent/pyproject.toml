@@ -1,0 +1,31 @@
+[build-system]
+requires = ["setuptools>=75"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "devhub-auditor"
+version = "0.1.0"
+requires-python = ">=3.11"
+dependencies = [
+  "openai>=2,<3",
+  "anthropic>=0.54,<1", "langgraph>=1,<2", "langgraph-checkpoint-postgres>=3,<4",
+  "psycopg[binary,pool]>=3.2,<4", "pydantic>=2.10,<3", "httpx>=0.28,<1",
+  "PyJWT[crypto]>=2.10,<3", "redis>=5,<7", "python-dotenv>=1,<2",
+  "tree-sitter>=0.25,<0.26", "tree-sitter-javascript>=0.25,<0.26",
+  "tree-sitter-typescript>=0.23,<0.24"
+]
+
+[project.optional-dependencies]
+test = ["pytest>=8,<10"]
+
+[project.scripts]
+devhub-auditor = "auditor.worker:main"
+devhub-audit-runner = "auditor.runner:main"
+devhub-audit-evaluate = "auditor.evaluate:main"
+
+[tool.setuptools.packages.find]
+include = ["auditor*"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+pythonpath = ["."]

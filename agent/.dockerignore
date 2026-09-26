@@ -1,0 +1,9 @@
+.venv
+.env
+profiles.json
+__pycache__
+**/__pycache__
+tests
+*.egg-info
+.pytest_cache
+evaluation-results.json

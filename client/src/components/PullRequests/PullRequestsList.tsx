@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useState } from "react";
-import useSWR from "swr";
+import useSWR, { mutate as mutateSWR } from "swr";
 import { PullRequestsAPI, pullRequestsKey } from "@/API/PullRequestsAPI";
 import { ReviewCommentsAPI, reviewCommentCountsKey } from "@/API/ReviewCommentsAPI";
 import { useRepoEvents, type RepoEvent } from "@/hooks/useRepoEvents";
@@ -10,6 +10,7 @@ import PullRequestSummary from "./PullRequestSummary";
 import PullRequestDependencies from "./PullRequestDependencies";
 import ReviewerSuggestions from "./ReviewerSuggestions";
 import PullRequestOnboarding from "./PullRequestOnboarding";
+import PullRequestAudit from "./PullRequestAudit";
 
 const STATUS_STYLES: Record<string, string> = {
   open: "bg-emerald-100 text-emerald-800 dark:bg-emerald-900/40 dark:text-emerald-300",
@@ -52,6 +53,15 @@ export default function PullRequestsList({ repoId }: { repoId: string }) {
           }),
           { revalidate: false }
         );
+      } else if (event.type === "audit") {
+        // The list owns the repository's single SSE connection. Revalidate
+        // every mounted audit panel through SWR rather than opening one event
+        // stream per PR card.
+        mutateSWR(
+          (key) =>
+            Array.isArray(key) &&
+            (key[0] === "pull-request-audits" || key[0] === "audit-run")
+        );
       }
     },
     [mutatePullRequests, mutateCommentCounts]
@@ -65,8 +75,8 @@ export default function PullRequestsList({ repoId }: { repoId: string }) {
     try {
       const pullRequests = await PullRequestsAPI.syncFromGithub(repoId);
       mutatePullRequests(pullRequests);
-    } catch (err: any) {
-      setSyncError(err.message);
+    } catch (err) {
+      setSyncError(err instanceof Error ? err.message : "Could not sync pull requests");
     } finally {
       setSyncing(false);
     }
@@ -148,6 +158,7 @@ export default function PullRequestsList({ repoId }: { repoId: string }) {
                   can sit here unconditionally. */}
               <PullRequestOnboarding prId={pr.id} />
               {pr.status === "open" && <ReviewerSuggestions prId={pr.id} />}
+              <PullRequestAudit prId={pr.id} canStart={pr.status === "open"} />
               <PullRequestSummary prId={pr.id} />
             </div>
           ))}

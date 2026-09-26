@@ -36,6 +36,8 @@ const prDependencies_routes_1 = require("./gateway/routes/prDependencies.routes"
 const expertise_routes_1 = require("./gateway/routes/expertise.routes");
 const onboarding_routes_1 = require("./gateway/routes/onboarding.routes");
 const webhooks_routes_1 = require("./gateway/routes/webhooks.routes");
+const auditWebhooks_routes_1 = require("./gateway/routes/auditWebhooks.routes");
+const audits_routes_1 = require("./gateway/routes/audits.routes");
 const events_routes_1 = require("./gateway/routes/events.routes");
 const auth_middleware_1 = require("./gateway/middleware/auth.middleware");
 const http_1 = __importDefault(require("http"));
@@ -77,6 +79,7 @@ app.use((0, compression_1.default)({
 //   express.json() below would consume and parse the body first,
 //   destroying the exact bytes the signature was computed over.
 app.use('/api/webhooks', webhooks_routes_1.webhooksRouter);
+app.use('/api/audit-webhooks', auditWebhooks_routes_1.auditWebhooksRouter);
 app.use(express_1.default.json());
 // Unauthenticated and dependency-free, for platform health checks. Kept
 // deliberately dumb: if it also probed Postgres and Redis, a slow database
@@ -92,6 +95,7 @@ app.use(auth_middleware_1.AuthMiddleware);
 app.use('/api/auth', auth_routes_1.authRouter);
 app.use('/api/users', users_routes_1.usersRouter);
 app.use('/api/pull-requests', pullRequest_routes_1.pullRequestRouter);
+app.use('/api/audits', audits_routes_1.auditsRouter);
 app.use('/api/repositories', repositories_routes_1.repositoriesRouter);
 app.use('/api/repositories', events_routes_1.eventsRouter);
 app.use('/api/code', code_routes_1.codeRouter);

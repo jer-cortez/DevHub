@@ -1,0 +1,25 @@
+{
+  "version": 1,
+  "samples": [
+    {"path":"bad/sql_injection.ts","label":"bad","expected":[{"severity":"high","category":"sql-injection","line":2}]},
+    {"path":"bad/command_injection.js","label":"bad","expected":[{"severity":"critical","category":"command-injection","line":2}]},
+    {"path":"bad/path_traversal.ts","label":"bad","expected":[{"severity":"high","category":"path-traversal","line":2}]},
+    {"path":"bad/hardcoded_secret.ts","label":"bad","expected":[{"severity":"critical","category":"hardcoded-secret","line":1}]},
+    {"path":"bad/missing_auth.ts","label":"bad","expected":[{"severity":"high","category":"missing-authorization","line":2}]},
+    {"path":"bad/eval_input.js","label":"bad","expected":[{"severity":"critical","category":"code-injection","line":2}]},
+    {"path":"bad/weak_crypto.ts","label":"bad","expected":[{"severity":"medium","category":"weak-cryptography","line":2}]},
+    {"path":"bad/ssrf.ts","label":"bad","expected":[{"severity":"high","category":"ssrf","line":2}]},
+    {"path":"bad/xss.tsx","label":"bad","expected":[{"severity":"high","category":"xss","line":2}]},
+    {"path":"bad/prototype_pollution.js","label":"bad","expected":[{"severity":"high","category":"prototype-pollution","line":2}]},
+    {"path":"clean/sql_parameterized.ts","label":"clean","expected":[]},
+    {"path":"clean/command_spawn.js","label":"clean","expected":[]},
+    {"path":"clean/path_checked.ts","label":"clean","expected":[]},
+    {"path":"clean/secret_from_env.ts","label":"clean","expected":[]},
+    {"path":"clean/authorized_delete.ts","label":"clean","expected":[]},
+    {"path":"clean/expression_parser.js","label":"clean","expected":[]},
+    {"path":"clean/password_scrypt.ts","label":"clean","expected":[]},
+    {"path":"clean/validated_fetch.ts","label":"clean","expected":[]},
+    {"path":"clean/escaped_text.tsx","label":"clean","expected":[]},
+    {"path":"clean/safe_assignment.js","label":"clean","expected":[]}
+  ]
+}

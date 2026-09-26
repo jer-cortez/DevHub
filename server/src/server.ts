@@ -32,6 +32,8 @@ import { prDependenciesRouter } from './gateway/routes/prDependencies.routes';
 import { expertiseRouter } from './gateway/routes/expertise.routes';
 import { onboardingRouter } from './gateway/routes/onboarding.routes';
 import { webhooksRouter } from './gateway/routes/webhooks.routes';
+import { auditWebhooksRouter } from './gateway/routes/auditWebhooks.routes';
+import { auditsRouter } from './gateway/routes/audits.routes';
 import { eventsRouter } from './gateway/routes/events.routes';
 import { AuthMiddleware } from './gateway/middleware/auth.middleware';
 import http from 'http';
@@ -82,6 +84,7 @@ app.use(
 //   express.json() below would consume and parse the body first,
 //   destroying the exact bytes the signature was computed over.
 app.use('/api/webhooks', webhooksRouter);
+app.use('/api/audit-webhooks', auditWebhooksRouter);
 
 app.use(express.json());
 
@@ -102,6 +105,7 @@ app.use(AuthMiddleware);
 app.use('/api/auth', authRouter);
 app.use('/api/users', usersRouter);
 app.use('/api/pull-requests', pullRequestRouter);
+app.use('/api/audits', auditsRouter);
 app.use('/api/repositories', repositoriesRouter);
 app.use('/api/repositories', eventsRouter);
 app.use('/api/code', codeRouter);
@@ -133,4 +137,3 @@ server.on('upgrade', (req, socket, head) => {
 server.listen(PORT, () => {
   console.log(`Server started on port ${PORT}`);
 });
-

@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@/lib/supabase/server';
+import { siteOrigin } from '@/lib/siteOrigin';
 
 /**
  * GitHub redirects here with a one-time `code` after the user approves OAuth login.
@@ -11,18 +12,6 @@ import { createClient } from '@/lib/supabase/server';
  * @returns
  * - Redirects to /dashboard on success, or / if there's no code or the exchange fails
  */
-// Base for building the outgoing redirect target. `request.url` looks like
-// the obvious choice, but behind nginx it resolved to this Next process's
-// own bind address (http://localhost:3000) instead of the public domain —
-// sending the browser to a host it can't reach. NEXT_PUBLIC_API_URL is the
-// one place the real deployed origin is already configured (client and API
-// share one origin behind the reverse proxy), so redirects are anchored to
-// that instead of anything derived from the incoming request. Falls back to
-// request.url so local dev (no NEXT_PUBLIC_API_URL surprises) still works.
-function siteOrigin(request: NextRequest): string {
-  return process.env.NEXT_PUBLIC_API_URL || request.url;
-}
-
 export async function GET(request: NextRequest) {
   const code = new URL(request.url).searchParams.get('code');
   if (!code) {

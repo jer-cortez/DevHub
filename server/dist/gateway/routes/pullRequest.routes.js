@@ -10,6 +10,7 @@ const validate_middleware_1 = require("../middleware/validate.middleware");
 const common_schemas_1 = require("../../schemas/common.schemas");
 const pullRequest_schemas_1 = require("../../schemas/pullRequest.schemas");
 const rateLimit_middleware_1 = require("../middleware/rateLimit.middleware");
+const audits_controller_1 = require("../../controller/audits.controller");
 const router = express_1.default.Router();
 exports.pullRequestRouter = router;
 router.get('/all', pullRequest_controller_1.PullRequestController.findAll);
@@ -17,6 +18,8 @@ router.get('/by-repo/:repoId', (0, validate_middleware_1.validateParams)(common_
 router.post('/sync/:repoId', (0, validate_middleware_1.validateParams)(common_schemas_1.repoIdParams), rateLimit_middleware_1.githubRateLimiter, pullRequest_controller_1.PullRequestController.sync);
 // Must precede '/:id' — otherwise Express matches the bare id route first.
 router.post('/:id/summarize', (0, validate_middleware_1.validateParams)(common_schemas_1.idParams), rateLimit_middleware_1.anthropicRateLimiter, pullRequest_controller_1.PullRequestController.summarize);
+router.post('/:id/audits', (0, validate_middleware_1.validateParams)(common_schemas_1.idParams), rateLimit_middleware_1.githubRateLimiter, audits_controller_1.AuditsController.request);
+router.get('/:id/audits', (0, validate_middleware_1.validateParams)(common_schemas_1.idParams), audits_controller_1.AuditsController.listForPr);
 router.get('/:id', (0, validate_middleware_1.validateParams)(common_schemas_1.idParams), pullRequest_controller_1.PullRequestController.findById);
 router.post('/create', (0, validate_middleware_1.validateBody)(pullRequest_schemas_1.createPullRequestBody), pullRequest_controller_1.PullRequestController.create);
 router.delete('/:id', (0, validate_middleware_1.validateParams)(common_schemas_1.idParams), pullRequest_controller_1.PullRequestController.delete);

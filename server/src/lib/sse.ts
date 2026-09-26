@@ -8,7 +8,7 @@ import { redisSub, REPO_EVENTS_CHANNEL } from './redis';
  * or repositories record).
  */
 export interface RepoEvent {
-  type: 'pull_request' | 'issue' | 'comment' | 'repository';
+  type: 'pull_request' | 'issue' | 'comment' | 'repository' | 'audit';
   repoId: string;
   data: unknown;
 }

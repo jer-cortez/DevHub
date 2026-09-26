@@ -1,0 +1,37 @@
+[Unit]
+Description=DevHub pull request auditor
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=devhub-auditor
+Group=devhub-auditor
+WorkingDirectory=/srv/github-extension/agent
+EnvironmentFile=/etc/devhub/auditor.env
+Environment=HOME=/var/lib/devhub-auditor
+ExecStart=/srv/github-extension/agent/.venv/bin/devhub-auditor
+Restart=on-failure
+RestartSec=10s
+TimeoutStopSec=40s
+UMask=0077
+
+# The application worker can use the network and SSH client, but it has no
+# Docker group membership or Docker socket. Container execution belongs only
+# to the isolated runner host.
+NoNewPrivileges=true
+PrivateTmp=true
+PrivateDevices=true
+ProtectSystem=strict
+ProtectHome=read-only
+ProtectKernelTunables=true
+ProtectKernelModules=true
+ProtectKernelLogs=true
+ProtectControlGroups=true
+RestrictSUIDSGID=true
+LockPersonality=true
+CapabilityBoundingSet=
+RestrictAddressFamilies=AF_UNIX AF_INET AF_INET6
+
+[Install]
+WantedBy=multi-user.target

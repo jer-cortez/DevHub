@@ -5,7 +5,7 @@ import { createClient } from "@/lib/supabase/client";
 const API_URL = process.env.NEXT_PUBLIC_API_URL!;
 
 export interface RepoEvent {
-  type: "pull_request" | "issue" | "comment" | "repository";
+  type: "pull_request" | "issue" | "comment" | "repository" | "audit";
   repoId: string;
   data: unknown;
 }
@@ -62,6 +62,7 @@ export function useRepoEvents(repoId: string, onEvent: (event: RepoEvent) => voi
           }
         },
         onerror(err) {
+          if (controller.signal.aborted || err?.name === "AbortError") return;
           console.error("Repo events connection error:", err);
           // Returning (rather than throwing) tells fetch-event-source to
           // keep retrying with its default backoff, instead of giving up.
