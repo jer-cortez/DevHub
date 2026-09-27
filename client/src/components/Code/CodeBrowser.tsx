@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState, useSyncExternalStore } from "react";
 import Link from "next/link";
 import useSWR from "swr";
 import { Prism as SyntaxHighlighter } from "react-syntax-highlighter";
@@ -41,18 +41,21 @@ function formatBytes(bytes: number): string {
   return `${(bytes / 1024).toFixed(1)} KB`;
 }
 
+function subscribeToTheme(onChange: () => void) {
+  const observer = new MutationObserver(onChange);
+  observer.observe(document.documentElement, {
+    attributes: true,
+    attributeFilter: ["data-theme"],
+  });
+  return () => observer.disconnect();
+}
+
 function usePrefersDark(): boolean {
-  const [isDark, setIsDark] = useState(false);
-
-  useEffect(() => {
-    const mql = window.matchMedia("(prefers-color-scheme: dark)");
-    setIsDark(mql.matches);
-    const listener = (e: MediaQueryListEvent) => setIsDark(e.matches);
-    mql.addEventListener("change", listener);
-    return () => mql.removeEventListener("change", listener);
-  }, []);
-
-  return isDark;
+  return useSyncExternalStore(
+    subscribeToTheme,
+    () => document.documentElement.dataset.theme === "dark",
+    () => false,
+  );
 }
 
 function HistoryIcon() {

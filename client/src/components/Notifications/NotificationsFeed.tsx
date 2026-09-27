@@ -18,12 +18,12 @@ export default function NotificationsFeed() {
   const visible = notifications.slice(0, VISIBLE_LIMIT);
 
   return (
-    <div className="rounded-md border border-neutral-200 dark:border-neutral-800 overflow-hidden">
-      <div className="flex items-center justify-between px-4 py-2 bg-neutral-50 dark:bg-neutral-900 border-b border-neutral-200 dark:border-neutral-800">
+    <div className="ws-card ws-activity">
+      <div className="ws-card-heading">
         <div className="flex items-center gap-2">
-          <span className="text-sm font-medium">Your activity</span>
+          <div><h2>Recent activity</h2><p>Updates from repositories you follow</p></div>
           {unreadCount > 0 && (
-            <span className="text-xs rounded-full px-1.5 py-0.5 bg-orange-100 text-orange-800 dark:bg-orange-900/40 dark:text-orange-300">
+            <span className="text-xs rounded-full px-1.5 py-0.5 bg-sky-100 text-sky-800 dark:bg-sky-900/40 dark:text-sky-300">
               {unreadCount} new
             </span>
           )}
@@ -31,7 +31,7 @@ export default function NotificationsFeed() {
         {unreadCount > 0 && (
           <button
             onClick={markAllRead}
-            className="text-xs text-blue-600 dark:text-blue-400 hover:underline"
+            className="ws-text-link"
           >
             Mark all read
           </button>

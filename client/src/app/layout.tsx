@@ -13,7 +13,7 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "GitHub Extension",
+  title: "DevHub | Code review workspace",
   description: "Collaborate on code reviews and drawing boards with your team",
 };
 
@@ -25,8 +25,20 @@ export default function RootLayout({
   return (
     <html
       lang="en"
+      suppressHydrationWarning
       className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}
     >
+      <head>
+        <script dangerouslySetInnerHTML={{ __html: `
+          (() => {
+            let preference = 'system';
+            try { preference = localStorage.getItem('devhub-theme') || 'system'; } catch {}
+            document.documentElement.dataset.theme = preference === 'light' || preference === 'dark'
+              ? preference
+              : window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+          })();
+        ` }} />
+      </head>
       <body className="min-h-full flex flex-col bg-background text-foreground">
         {children}
       </body>
