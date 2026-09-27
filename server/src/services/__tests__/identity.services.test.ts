@@ -1,5 +1,5 @@
 import type { User as SupabaseUser } from '@supabase/supabase-js';
-import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { Prisma } from '../../generated/prisma/client';
 
 const db = vi.hoisted(() => ({
@@ -15,6 +15,8 @@ const github = vi.hoisted(() => ({
   checkMembership: vi.fn(),
 }));
 const supabase = vi.hoisted(() => ({ getUser: vi.fn() }));
+
+afterEach(() => vi.unstubAllEnvs());
 
 vi.mock('../../config/prismaClient', () => ({
   prisma: {
@@ -102,7 +104,7 @@ describe('GitHub provider identity extraction', () => {
 });
 
 describe('verified GitHub profile resolution', () => {
-  beforeEach(() => vi.clearAllMocks());
+  beforeEach(() => vi.resetAllMocks());
 
   it('gets the authorization username from GitHub by verified numeric id', async () => {
     github.getById.mockResolvedValue({ data: {
@@ -136,7 +138,8 @@ describe('verified GitHub profile resolution', () => {
 
 describe('shared GitHub admission', () => {
   beforeEach(() => {
-    vi.clearAllMocks();
+    vi.resetAllMocks();
+    vi.stubEnv('GITHUB_ORG_NAME', 'nonprofit-org');
     supabase.getUser.mockResolvedValue({ data: { user: authUser() }, error: null });
     github.getById.mockResolvedValue({ data: {
       id: 12345,
@@ -151,6 +154,18 @@ describe('shared GitHub admission', () => {
     db.findUnique.mockResolvedValueOnce(null).mockResolvedValueOnce(localUser);
     db.update.mockResolvedValue({ ...localUser, auth_user_id: identity.authUserId });
     db.findOrganizations.mockResolvedValue([]);
+  });
+
+  it('fails closed before external calls when the organization is not configured', async () => {
+    vi.stubEnv('GITHUB_ORG_NAME', '');
+
+    await expect(AuthHandler.verifyGithubAdmission('token')).rejects.toMatchObject({
+      statusCode: 503,
+      code: 'github_organization_unavailable',
+    });
+    expect(supabase.getUser).not.toHaveBeenCalled();
+    expect(github.getById).not.toHaveBeenCalled();
+    expect(db.transaction).not.toHaveBeenCalled();
   });
 
   it('checks and binds both identities for admission while allowing local bootstrap', async () => {
@@ -175,7 +190,7 @@ describe('shared GitHub admission', () => {
 
 describe('verified identity binding', () => {
   beforeEach(() => {
-    vi.clearAllMocks();
+    vi.resetAllMocks();
     db.transaction.mockImplementation(async (callback) => callback({
       user: { findUnique: db.findUnique, update: db.update, create: db.create },
     }));
