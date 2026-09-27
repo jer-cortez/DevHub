@@ -1,6 +1,7 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.OrganizationMembersServices = void 0;
+const publicUser_1 = require("./publicUser");
 const organizationMembersSB_1 = require("../supabase/organizationMembersSB");
 const organizations_services_1 = require("./organizations.services");
 const users_services_1 = require("./users.services");
@@ -37,7 +38,7 @@ exports.OrganizationMembersServices = {
             .map((m) => ({
             id: m.id,
             joined_at: m.joined_at,
-            user: usersById.get(m.user_id),
+            user: (0, publicUser_1.publicUser)(usersById.get(m.user_id)),
         }));
     },
     async syncFromGithub() {

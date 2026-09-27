@@ -1,21 +1,18 @@
 import type { Request, Response } from "express";
-import { AuthHandler } from "../services/auth.services";
-import { UserServices } from "../services/users.services";
+import { resolveLocalUser } from "../services/currentUser.services";
+import { IdentityError } from "../services/identity.services";
+import { publicUser } from "../services/publicUser";
 
 export const AuthController = {
   async login(req: Request, res: Response) {
     try {
-      const { username, email, avatar_url, github_id } = req.user!;
-      const user = await UserServices.upsertByGithubId({
-        github_id,
-        username,
-        avatar_url,
-        email,
-      });
-      res.status(200).json({ data: user });
+      res.status(200).json({ data: publicUser(await resolveLocalUser(req)) });
     } catch (error) {
-      res.status(500).json({ error: "Failed to log in user" });
+      if (error instanceof IdentityError) {
+        res.status(error.statusCode).json({ error: error.message, code: error.code });
+        return;
+      }
+      res.status(503).json({ error: "Failed to log in user" });
     }
   },
 };
-

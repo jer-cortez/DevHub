@@ -35,6 +35,7 @@ import { webhooksRouter } from './gateway/routes/webhooks.routes';
 import { auditWebhooksRouter } from './gateway/routes/auditWebhooks.routes';
 import { auditsRouter } from './gateway/routes/audits.routes';
 import { eventsRouter } from './gateway/routes/events.routes';
+import { workspaceRouter } from './gateway/routes/workspace.routes';
 import { AuthMiddleware } from './gateway/middleware/auth.middleware';
 import http from 'http';
 import { wss } from './lib/boardSocket';
@@ -103,6 +104,7 @@ app.get('/api/home', (req, res) => {
 app.use(AuthMiddleware);
 
 app.use('/api/auth', authRouter);
+app.use('/api/workspace', workspaceRouter);
 app.use('/api/users', usersRouter);
 app.use('/api/pull-requests', pullRequestRouter);
 app.use('/api/audits', auditsRouter);

@@ -1,3 +1,4 @@
+import { publicUser, type PublicUser } from './publicUser';
 import { TeamMembershipsSB } from '../supabase/teamMembershipsSB';
 import { UserServices } from './users.services';
 import type { team_memberships, User } from '../generated/prisma/client';
@@ -5,7 +6,8 @@ import type { team_memberships, User } from '../generated/prisma/client';
 export interface TeamMemberWithUser {
   id: string;
   joined_at: Date;
-  user: User;
+  role: string;
+  user: PublicUser;
 }
 
 /**
@@ -38,7 +40,8 @@ export const TeamsServices = {
       .map((m) => ({
         id: m.id,
         joined_at: m.joined_at,
-        user: usersById.get(m.user_id)!,
+        role: m.role,
+        user: publicUser(usersById.get(m.user_id)!),
       }));
   },
   async join(userId: string, repoId: string): Promise<team_memberships> {

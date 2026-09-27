@@ -1,6 +1,7 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.TeamsServices = void 0;
+const publicUser_1 = require("./publicUser");
 const teamMembershipsSB_1 = require("../supabase/teamMembershipsSB");
 const users_services_1 = require("./users.services");
 /**
@@ -32,7 +33,8 @@ exports.TeamsServices = {
             .map((m) => ({
             id: m.id,
             joined_at: m.joined_at,
-            user: usersById.get(m.user_id),
+            role: m.role,
+            user: (0, publicUser_1.publicUser)(usersById.get(m.user_id)),
         }));
     },
     async join(userId, repoId) {

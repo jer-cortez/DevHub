@@ -1,11 +1,12 @@
 import type { Request, Response } from 'express';
+import { publicUser } from '../services/publicUser';
 import { UserServices } from '../services/users.services';
 
 export const UserController = {
   async findAll(_req: Request, res: Response) {
     try {
       const users = await UserServices.findAll();
-      res.status(200).json({ data: users });
+      res.status(200).json({ data: users.map(publicUser) });
     } catch (error) {
       res.status(500).json({ error: 'Failed to fetch all users' });
     }
@@ -14,7 +15,7 @@ export const UserController = {
     try {
       const id = req.params.id as string;
       const user = await UserServices.findById(id);
-      res.status(200).json({ data: user });
+      res.status(200).json({ data: publicUser(user) });
     } catch (error) {
       res.status(500).json({ error: 'Failed to fetch user' });
     }
@@ -22,7 +23,7 @@ export const UserController = {
   async create(req: Request, res: Response) {
     try {
       const newUser = await UserServices.createUser(req.body);
-      res.status(201).json({ data: newUser });
+      res.status(201).json({ data: publicUser(newUser) });
     } catch (error) {
       res.status(500).json({ error: 'Failed to create user' });
     }

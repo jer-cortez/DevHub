@@ -132,6 +132,7 @@ exports.TransactionIsolationLevel = runtime.makeStrictEnum({
 exports.UserScalarFieldEnum = {
     id: 'id',
     github_id: 'github_id',
+    auth_user_id: 'auth_user_id',
     username: 'username',
     avatar_url: 'avatar_url',
     email: 'email',
@@ -200,6 +201,8 @@ exports.Organization_membersScalarFieldEnum = {
     id: 'id',
     user_id: 'user_id',
     org_id: 'org_id',
+    role: 'role',
+    status: 'status',
     joined_at: 'joined_at'
 };
 exports.OrganizationsScalarFieldEnum = {
@@ -278,6 +281,7 @@ exports.Team_membershipsScalarFieldEnum = {
     id: 'id',
     user_id: 'user_id',
     repo_id: 'repo_id',
+    role: 'role',
     joined_at: 'joined_at'
 };
 exports.Pr_dependenciesScalarFieldEnum = {

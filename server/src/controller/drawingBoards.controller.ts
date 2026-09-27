@@ -1,6 +1,7 @@
 import type { Request, Response } from 'express';
 import { DrawingBoardsServices } from '../services/drawingBoards.services';
-import { UserServices } from '../services/users.services';
+import { resolveLocalUser } from '../services/currentUser.services';
+import { IdentityError } from '../services/identity.services';
 
 export const DrawingBoardsController = {
   async findAll(_req: Request, res: Response) {
@@ -28,12 +29,7 @@ export const DrawingBoardsController = {
       // not req.user.id (the Supabase Auth UUID) — those are different
       // ids, same distinction every other author_id/created_by column in
       // this schema already relies on.
-      const author = await UserServices.upsertByGithubId({
-        github_id: req.user!.github_id,
-        username: req.user!.username,
-        avatar_url: req.user!.avatar_url,
-        email: req.user!.email,
-      });
+      const author = await resolveLocalUser(req);
 
       const board = await DrawingBoardsServices.create({
         ...req.body,
@@ -41,6 +37,10 @@ export const DrawingBoardsController = {
       });
       res.status(201).json({ data: board });
     } catch (error) {
+      if (error instanceof IdentityError) {
+        res.status(error.statusCode).json({ error: error.message, code: error.code });
+        return;
+      }
       res.status(500).json({ error: 'Failed to create drawing board' });
     }
   },

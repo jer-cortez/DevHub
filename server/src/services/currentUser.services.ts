@@ -1,5 +1,4 @@
 import type { Request } from 'express';
-import { UserServices } from './users.services';
 import type { User } from '../generated/prisma/client';
 
 /**
@@ -11,14 +10,9 @@ import type { User } from '../generated/prisma/client';
  * created_by, user_id — refers to the latter, so writing `req.user.id`
  * into any of them produces a row that silently joins to nothing.
  *
- * It's an upsert rather than a lookup so a user who authenticates before
- * ever being synced from GitHub still gets a local row on first use.
+ * The identity binder preserves a GitHub-synced local row, attaches the Auth
+ * UUID atomically, and rejects either key if it is already linked elsewhere.
  */
 export async function resolveLocalUser(req: Request): Promise<User> {
-  return UserServices.upsertByGithubId({
-    github_id: req.user!.github_id,
-    username: req.user!.username,
-    avatar_url: req.user!.avatar_url,
-    email: req.user!.email,
-  });
+  return req.user!.local_user;
 }

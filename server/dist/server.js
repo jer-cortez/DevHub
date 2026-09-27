@@ -39,6 +39,7 @@ const webhooks_routes_1 = require("./gateway/routes/webhooks.routes");
 const auditWebhooks_routes_1 = require("./gateway/routes/auditWebhooks.routes");
 const audits_routes_1 = require("./gateway/routes/audits.routes");
 const events_routes_1 = require("./gateway/routes/events.routes");
+const workspace_routes_1 = require("./gateway/routes/workspace.routes");
 const auth_middleware_1 = require("./gateway/middleware/auth.middleware");
 const http_1 = __importDefault(require("http"));
 const boardSocket_1 = require("./lib/boardSocket");
@@ -93,6 +94,7 @@ app.get('/api/home', (req, res) => {
 });
 app.use(auth_middleware_1.AuthMiddleware);
 app.use('/api/auth', auth_routes_1.authRouter);
+app.use('/api/workspace', workspace_routes_1.workspaceRouter);
 app.use('/api/users', users_routes_1.usersRouter);
 app.use('/api/pull-requests', pullRequest_routes_1.pullRequestRouter);
 app.use('/api/audits', audits_routes_1.auditsRouter);

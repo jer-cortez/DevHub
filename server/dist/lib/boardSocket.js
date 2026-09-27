@@ -96,14 +96,13 @@ exports.wss.on('connection', (ws, _req, boardId) => {
                 ws.close(4003, 'Expected auth message');
                 return;
             }
-            const user = await auth_services_1.AuthHandler.verifySupabaseToken(message.token);
-            if (!user) {
-                ws.close(4004, 'Invalid or expired token');
-                return;
+            try {
+                await auth_services_1.AuthHandler.verifyGithubAdmission(message.token);
             }
-            const isMember = await auth_services_1.AuthHandler.verifyOrgMembership(user.user_metadata.user_name, message.token);
-            if (!isMember) {
-                ws.close(4005, 'Not an organization member');
+            catch {
+                // Do not reveal whether the token, provider identity, or membership
+                // failed over the socket. Every admission failure is closed.
+                ws.close(4004, 'Authentication failed');
                 return;
             }
             authenticated = true;

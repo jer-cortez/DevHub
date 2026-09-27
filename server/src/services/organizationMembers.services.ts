@@ -1,3 +1,4 @@
+import { publicUser, type PublicUser } from './publicUser';
 import { OrganizationMembersSB } from '../supabase/organizationMembersSB';
 import { OrganizationsServices } from './organizations.services';
 import { UserServices } from './users.services';
@@ -9,7 +10,7 @@ const ORG_NAME = process.env.GITHUB_ORG_NAME!;
 export interface OrgMemberWithUser {
   id: string;
   joined_at: Date;
-  user: User;
+  user: PublicUser;
 }
 
 export const OrganizationMembersServices = {
@@ -43,7 +44,7 @@ export const OrganizationMembersServices = {
       .map((m) => ({
         id: m.id,
         joined_at: m.joined_at,
-        user: usersById.get(m.user_id)!,
+        user: publicUser(usersById.get(m.user_id)!),
       }));
   },
   async syncFromGithub(): Promise<OrgMemberWithUser[]> {

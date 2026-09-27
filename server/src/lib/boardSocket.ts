@@ -111,15 +111,12 @@ wss.on('connection', (ws: WebSocket, _req: IncomingMessage, boardId: string) => 
         return;
       }
 
-      const user = await AuthHandler.verifySupabaseToken(message.token);
-      if (!user) {
-        ws.close(4004, 'Invalid or expired token');
-        return;
-      }
-
-      const isMember = await AuthHandler.verifyOrgMembership(user.user_metadata.user_name, message.token);
-      if (!isMember) {
-        ws.close(4005, 'Not an organization member');
+      try {
+        await AuthHandler.verifyGithubAdmission(message.token);
+      } catch {
+        // Do not reveal whether the token, provider identity, or membership
+        // failed over the socket. Every admission failure is closed.
+        ws.close(4004, 'Authentication failed');
         return;
       }
 

@@ -10,7 +10,8 @@ datasource db {
 
 model User {
   id                       String            @id @default(uuid()) @db.Uuid
-  github_id                Int               @unique
+  github_id                Int?              @unique
+  auth_user_id             String?           @unique @db.Uuid
   username                 String
   avatar_url               String?
   email                    String?
@@ -102,6 +103,8 @@ model organization_members {
   id        String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
   user_id   String   @default(dbgenerated("gen_random_uuid()")) @db.Uuid
   org_id    String   @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  role      String   @default("member") @db.VarChar
+  status    String   @default("active") @db.VarChar
   joined_at DateTime @db.Timestamp(6)
 
   @@unique([user_id, org_id])
@@ -211,6 +214,7 @@ model team_memberships {
   id        String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
   user_id   String   @unique @db.Uuid
   repo_id   String   @db.Uuid
+  role      String   @default("developer") @db.VarChar
   joined_at DateTime @default(now()) @db.Timestamptz(6)
 
   @@index([repo_id])

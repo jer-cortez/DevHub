@@ -1,12 +1,13 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.UserController = void 0;
+const publicUser_1 = require("../services/publicUser");
 const users_services_1 = require("../services/users.services");
 exports.UserController = {
     async findAll(_req, res) {
         try {
             const users = await users_services_1.UserServices.findAll();
-            res.status(200).json({ data: users });
+            res.status(200).json({ data: users.map(publicUser_1.publicUser) });
         }
         catch (error) {
             res.status(500).json({ error: 'Failed to fetch all users' });
@@ -16,7 +17,7 @@ exports.UserController = {
         try {
             const id = req.params.id;
             const user = await users_services_1.UserServices.findById(id);
-            res.status(200).json({ data: user });
+            res.status(200).json({ data: (0, publicUser_1.publicUser)(user) });
         }
         catch (error) {
             res.status(500).json({ error: 'Failed to fetch user' });
@@ -25,7 +26,7 @@ exports.UserController = {
     async create(req, res) {
         try {
             const newUser = await users_services_1.UserServices.createUser(req.body);
-            res.status(201).json({ data: newUser });
+            res.status(201).json({ data: (0, publicUser_1.publicUser)(newUser) });
         }
         catch (error) {
             res.status(500).json({ error: 'Failed to create user' });

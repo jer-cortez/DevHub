@@ -2,7 +2,8 @@
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.DrawingBoardsController = void 0;
 const drawingBoards_services_1 = require("../services/drawingBoards.services");
-const users_services_1 = require("../services/users.services");
+const currentUser_services_1 = require("../services/currentUser.services");
+const identity_services_1 = require("../services/identity.services");
 exports.DrawingBoardsController = {
     async findAll(_req, res) {
         try {
@@ -31,12 +32,7 @@ exports.DrawingBoardsController = {
             // not req.user.id (the Supabase Auth UUID) — those are different
             // ids, same distinction every other author_id/created_by column in
             // this schema already relies on.
-            const author = await users_services_1.UserServices.upsertByGithubId({
-                github_id: req.user.github_id,
-                username: req.user.username,
-                avatar_url: req.user.avatar_url,
-                email: req.user.email,
-            });
+            const author = await (0, currentUser_services_1.resolveLocalUser)(req);
             const board = await drawingBoards_services_1.DrawingBoardsServices.create({
                 ...req.body,
                 created_by: author.id,
@@ -44,6 +40,10 @@ exports.DrawingBoardsController = {
             res.status(201).json({ data: board });
         }
         catch (error) {
+            if (error instanceof identity_services_1.IdentityError) {
+                res.status(error.statusCode).json({ error: error.message, code: error.code });
+                return;
+            }
             res.status(500).json({ error: 'Failed to create drawing board' });
         }
     },

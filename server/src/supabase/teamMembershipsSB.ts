@@ -17,9 +17,11 @@ export const TeamMembershipsSB = {
    * per repo the user has ever worked on.
    */
   async join(userId: string, repoId: string): Promise<team_memberships> {
+    const current = await prisma.team_memberships.findUnique({ where: { user_id: userId } });
+    if (current?.repo_id === repoId) return current;
     return prisma.team_memberships.upsert({
       where: { user_id: userId },
-      update: { repo_id: repoId, joined_at: new Date() },
+      update: { repo_id: repoId, role: 'developer', joined_at: new Date() },
       create: { user_id: userId, repo_id: repoId },
     });
   },

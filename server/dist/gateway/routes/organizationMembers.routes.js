@@ -5,6 +5,7 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.orgMembersRouter = void 0;
 const express_1 = __importDefault(require("express"));
+const workspace_middleware_1 = require("../middleware/workspace.middleware");
 const organizationMembers_controller_1 = require("../../controller/organizationMembers.controller");
 const validate_middleware_1 = require("../middleware/validate.middleware");
 const common_schemas_1 = require("../../schemas/common.schemas");
@@ -16,5 +17,5 @@ router.get('/all', organizationMembers_controller_1.OrganizationMembersControlle
 router.get('/members', organizationMembers_controller_1.OrganizationMembersController.findAllWithUserInfo);
 router.post('/sync', rateLimit_middleware_1.githubRateLimiter, organizationMembers_controller_1.OrganizationMembersController.sync);
 router.get('/:id', (0, validate_middleware_1.validateParams)(common_schemas_1.idParams), organizationMembers_controller_1.OrganizationMembersController.findById);
-router.post('/create', (0, validate_middleware_1.validateBody)(organizationMembers_schemas_1.createOrganizationMemberBody), organizationMembers_controller_1.OrganizationMembersController.create);
-router.delete('/:id', (0, validate_middleware_1.validateParams)(common_schemas_1.idParams), organizationMembers_controller_1.OrganizationMembersController.delete);
+router.post('/create', workspace_middleware_1.requireWorkspaceAdmin, (0, validate_middleware_1.validateBody)(organizationMembers_schemas_1.createOrganizationMemberBody), organizationMembers_controller_1.OrganizationMembersController.create);
+router.delete('/:id', workspace_middleware_1.requireWorkspaceAdmin, (0, validate_middleware_1.validateParams)(common_schemas_1.idParams), organizationMembers_controller_1.OrganizationMembersController.delete);
