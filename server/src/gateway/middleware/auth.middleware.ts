@@ -17,7 +17,7 @@ export const AuthMiddleware = async (
     }
 
     try {
-        const identity = await AuthHandler.verifyGithubAdmission(token);
+        const identity = await AuthHandler.verifyAdmission(token);
         req.user = {
             id: identity.authUserId,
             auth_user_id: identity.authUserId,

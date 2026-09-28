@@ -1,6 +1,8 @@
 import GitHubLoginButton from "@/components/Common/GitHubLoginButton";
+import EmailLoginForm from "@/components/Common/EmailLoginForm";
 
-export default function LoginPage() {
+export default async function LoginPage({ searchParams }: { searchParams: Promise<{ error?: string }> }) {
+  const { error } = await searchParams;
   return (
     <main className="min-h-screen flex items-center justify-center px-4">
       <div className="w-full max-w-sm flex flex-col items-center gap-8">
@@ -34,6 +36,8 @@ export default function LoginPage() {
           </div>
 
           <GitHubLoginButton />
+          <p className="text-center text-sm text-foreground/50">or</p>
+          <EmailLoginForm denied={error === "admission_denied"} />
 
           <p className="text-xs text-foreground/40 text-center leading-relaxed">
             By signing in you agree to our{" "}

@@ -14,25 +14,27 @@ import { siteOrigin } from '@/lib/siteOrigin';
  */
 export async function GET(request: NextRequest) {
   const code = new URL(request.url).searchParams.get('code');
-  if (!code) {
-    return NextResponse.redirect(new URL('/', siteOrigin(request)));
-  }
+  const origin = siteOrigin(request);
+  if (!code) return NextResponse.redirect(new URL('/?error=admission_denied', origin));
 
   const supabase = await createClient();
   const { data } = await supabase.auth.exchangeCodeForSession(code);
 
-  if (!data.session) {
-    return NextResponse.redirect(new URL('/', siteOrigin(request)));
-  }
+  if (!data.session) return NextResponse.redirect(new URL('/?error=admission_denied', origin));
 
   try {
-    await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/auth/login`, {
+    const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/auth/login`, {
       method: 'POST',
       headers: { Authorization: `Bearer ${data.session.access_token}` },
     });
-  } catch (err) {
-    console.error('Failed to sync user with backend:', err);
+    if (!response.ok) {
+      await supabase.auth.signOut();
+      return NextResponse.redirect(new URL('/?error=admission_denied', origin));
+    }
+  } catch {
+    await supabase.auth.signOut();
+    return NextResponse.redirect(new URL('/?error=admission_denied', origin));
   }
 
-  return NextResponse.redirect(new URL('/dashboard', siteOrigin(request)));
+  return NextResponse.redirect(new URL('/dashboard', origin));
 }

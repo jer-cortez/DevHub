@@ -13,7 +13,7 @@ export default async function DashboardLayout({ children }: { children: ReactNod
 
   return (
     <DashboardShell
-      username={user.user_metadata.user_name}
+      username={user.user_metadata.user_name || user.email || "Member"}
       avatarUrl={user.user_metadata.avatar_url}
     >
       {children}

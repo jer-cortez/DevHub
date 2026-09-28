@@ -9,7 +9,7 @@ declare global {
         username: string;
         email: string | undefined;
         avatar_url: string | undefined;
-        github_id: number;
+        github_id: number | null;
         local_user: LocalUser;
       };
     }

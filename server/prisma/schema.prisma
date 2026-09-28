@@ -258,3 +258,70 @@ model file_touches {
   @@index([segments], type: Gin)
   @@index([user_id, touched_at(sort: Desc)], map: "file_touches_user_idx")
 }
+
+model sprints {
+  id String @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  repo_id String @db.Uuid
+  name String @db.VarChar
+  status String @default("planned") @db.VarChar
+  created_by String @db.Uuid
+  created_at DateTime @default(now()) @db.Timestamptz(6)
+  started_at DateTime? @db.Timestamptz(6)
+  closed_at DateTime? @db.Timestamptz(6)
+  @@unique([id, repo_id])
+  @@index([repo_id, status], map: "sprints_repo_status_idx")
+  @@index([repo_id], map: "sprints_one_active_repo", where: raw("status = 'active'"))
+}
+
+model tasks {
+  id String @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  repo_id String @db.Uuid
+  sprint_id String? @db.Uuid
+  title String @db.VarChar
+  description String?
+  category String @db.VarChar
+  status String @default("backlog") @db.VarChar
+  assignee_id String? @db.Uuid
+  created_by String @db.Uuid
+  created_at DateTime @default(now()) @db.Timestamptz(6)
+  updated_at DateTime @default(now()) @db.Timestamptz(6)
+  version Int @default(0)
+  @@unique([id, repo_id])
+  @@index([repo_id, status], map: "tasks_repo_status_idx")
+  @@index([sprint_id], map: "tasks_sprint_idx")
+  @@index([assignee_id], map: "tasks_assignee_idx")
+}
+
+model task_comments {
+  id String @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  task_id String @db.Uuid
+  author_id String @db.Uuid
+  body String
+  created_at DateTime @default(now()) @db.Timestamptz(6)
+  @@index([task_id, created_at], map: "task_comments_task_created_idx")
+}
+
+model task_pr_links {
+  id String @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  task_id String @db.Uuid
+  repo_id String @db.Uuid
+  pr_id String @db.Uuid
+  created_by String @db.Uuid
+  created_at DateTime @default(now()) @db.Timestamptz(6)
+  @@unique([task_id, pr_id])
+  @@index([pr_id], map: "task_pr_links_pr_idx")
+}
+
+model invitations {
+  id String @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  organization_id String @db.Uuid
+  email_normalized String @db.VarChar(320)
+  invited_by String @db.Uuid
+  expires_at DateTime @db.Timestamptz(6)
+  accepted_auth_user_id String? @db.Uuid
+  accepted_at DateTime? @db.Timestamptz(6)
+  revoked_at DateTime? @db.Timestamptz(6)
+  created_at DateTime @default(now()) @db.Timestamptz(6)
+  @@index([organization_id, email_normalized], map: "invitations_org_email_idx")
+  @@index([organization_id, created_at], map: "invitations_org_created_idx")
+}

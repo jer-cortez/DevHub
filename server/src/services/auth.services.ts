@@ -8,8 +8,10 @@ import {
     IdentityError,
     type VerifiedGithubIdentity,
 } from "./identity.services";
+import { admitConfirmedEmail } from './emailAdmission.services';
 import type { User as LocalUser } from "../generated/prisma/client";
 
+export type AdmittedIdentity = { authUserId: string; githubId: number | null; username: string; avatarUrl?: string; email?: string; localUser: LocalUser };
 export type AdmittedGithubIdentity = VerifiedGithubIdentity & { localUser: LocalUser };
 
 function configuredOrganizationName(): string {
@@ -70,13 +72,17 @@ export const AuthHandler = {
             throw new IdentityError('GitHub identity verification is temporarily unavailable', 503, 'github_unavailable');
         }
     },
-    async verifyGithubAdmission(token: string): Promise<AdmittedGithubIdentity> {
+    async verifyAdmission(token: string): Promise<AdmittedIdentity> {
         // Configuration failures must stop before token, GitHub, or database
         // calls so a deployment cannot admit users against an implicit org.
         const organizationName = configuredOrganizationName();
         const user = await this.verifySupabaseToken(token);
         if (!user) {
             throw new IdentityError('Invalid or expired token', 401, 'invalid_token');
+        }
+        if (!(user.identities ?? []).some(identity => identity.provider === 'github')) {
+            const admitted = await admitConfirmedEmail(user, organizationName);
+            return { authUserId: user.id, githubId: null, username: admitted.localUser.username, email: admitted.email, avatarUrl: admitted.localUser.avatar_url ?? undefined, localUser: admitted.localUser };
         }
         const identity = await this.resolveGithubIdentity(user);
         const isMember = await this.verifyOrgMembership(identity.username, organizationName);
@@ -115,5 +121,9 @@ export const AuthHandler = {
             throw new IdentityError('Local organization membership could not be verified', 503, 'workspace_unavailable');
         }
         return { ...identity, localUser };
+    },
+    // Preserve callers of the checkpoint-1 admission method.
+    async verifyGithubAdmission(token: string): Promise<AdmittedIdentity> {
+        return this.verifyAdmission(token);
     }
 }

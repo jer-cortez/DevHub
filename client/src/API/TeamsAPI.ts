@@ -11,6 +11,7 @@ export interface TeamMembership {
 export interface TeamMember {
   id: string;
   joined_at: string;
+  role: "developer" | "designer" | "tech_lead" | "project_manager";
   user: {
     id: string;
     username: string;
@@ -22,14 +23,6 @@ export const TeamsAPI = {
   /** Null when the user hasn't joined a team yet. */
   findMine: () => apiRequest<TeamMembership | null>("/api/teams/mine"),
   findByRepoId: (repoId: string) => apiRequest<TeamMember[]>(`/api/teams/by-repo/${repoId}`),
-  /** Joining is exclusive — this replaces any existing membership rather than adding one. */
-  join: (repoId: string) =>
-    apiRequest<TeamMembership>("/api/teams/join", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ repoId }),
-    }),
-  leave: () => apiRequest<null>("/api/teams/leave", { method: "POST" }),
 };
 
 export const myTeamKey = "my-team" as const;

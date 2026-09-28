@@ -18,9 +18,9 @@ export default function NotificationRow({
 }) {
   return (
     <a
-      href={notification.url ?? undefined}
-      target="_blank"
-      rel="noopener noreferrer"
+      href={notification.url?.startsWith("/tasks/") && notification.repo_id ? `/dashboard/repositories/${notification.repo_id}/tasks/${notification.url.split("/").pop()}` : notification.url ?? undefined}
+      target={notification.url?.startsWith("/tasks/") ? undefined : "_blank"}
+      rel={notification.url?.startsWith("/tasks/") ? undefined : "noopener noreferrer"}
       onClick={() => {
         if (!notification.is_read) onRead(notification.id);
       }}

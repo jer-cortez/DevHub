@@ -112,7 +112,7 @@ wss.on('connection', (ws: WebSocket, _req: IncomingMessage, boardId: string) => 
       }
 
       try {
-        await AuthHandler.verifyGithubAdmission(message.token);
+        await AuthHandler.verifyAdmission(message.token);
       } catch {
         // Do not reveal whether the token, provider identity, or membership
         // failed over the socket. Every admission failure is closed.

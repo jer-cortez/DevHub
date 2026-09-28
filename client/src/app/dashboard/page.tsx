@@ -1,5 +1,2 @@
-import OverviewContent from "@/components/Dashboard/OverviewContent";
-
-export default function DashboardPage() {
-  return <OverviewContent />;
-}
+import MyWorkContent from "@/components/Dashboard/MyWorkContent";
+export default function DashboardPage() { return <MyWorkContent />; }

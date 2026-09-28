@@ -3,6 +3,7 @@ import type { NotificationType } from "@/API/NotificationsAPI";
 
 /** Shared by the bell panel and the toast stack so one event type never renders as two different glyphs. */
 export default function NotificationIcon({ type }: { type: NotificationType }) {
+  if (type.startsWith("task_")) return <span className="text-orange-600 dark:text-orange-400 shrink-0 mt-0.5"><IssueIcon /></span>;
   if (type === "pull_request") {
     return (
       <span className="text-emerald-600 dark:text-emerald-400 shrink-0 mt-0.5">

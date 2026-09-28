@@ -1,6 +1,6 @@
 import { apiRequest } from "./apiClient";
 
-export type NotificationType = "pull_request" | "issue" | "comment";
+export type NotificationType = "pull_request" | "issue" | "comment" | "task_assigned" | "task_review_requested" | "task_approved";
 
 export interface Notification {
   id: string;

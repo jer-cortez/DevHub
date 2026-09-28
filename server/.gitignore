@@ -2,3 +2,4 @@
 .env
 /src/generated/prisma
 /dist
+DELIVERY_API.md

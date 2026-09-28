@@ -13,18 +13,19 @@ import { RepositoriesAPI,repositoriesKey,repositoryKey } from "@/API/Repositorie
 import { OrganizationMembersAPI,orgMembersKey } from "@/API/OrganizationMembersAPI";
 import WorkspaceIcon,{ type WorkspaceIconName } from "./WorkspaceIcon";
 import ThemeSelect from "./ThemeSelect";
+import { DeliveryAPI, workspaceKey } from "@/API/DeliveryAPI";
 import "./workspace.css";
 
 const navigation: { label: string; href: string; icon: WorkspaceIconName }[]=[
-  { label: "Overview",href: "/dashboard",icon: "overview" },
+  { label: "My work",href: "/dashboard",icon: "overview" },
+  { label: "My team",href: "/dashboard/teams",icon: "people" },
   { label: "Repositories",href: "/dashboard/repositories",icon: "repo" },
-  { label: "Organization health",href: "/dashboard/health",icon: "health" },
-  { label: "Teams",href: "/dashboard/teams",icon: "people" },
-  { label: "People",href: "/dashboard/people",icon: "people" },
 ];
 const repoTabs: { label: string; segment: string; icon: WorkspaceIconName }[]=[
   { label: "Code",segment: "code",icon: "code" },
   { label: "Issues",segment: "issues",icon: "issue" },
+  { label: "Tasks",segment: "tasks",icon: "issue" },
+  { label: "Sprints",segment: "sprints",icon: "overview" },
   { label: "Pull requests",segment: "pull-requests",icon: "branch" },
   { label: "System design",segment: "system-design",icon: "board" },
 ];
@@ -35,11 +36,12 @@ export default function DashboardShell({ username,avatarUrl,children }: { userna
   const repoId=pathname?.match(/^\/dashboard\/repositories\/([^/]+)(\/|$)/)?.[1];
   const segment=pathname?.match(/^\/dashboard\/repositories\/[^/]+\/([^/]+)/)?.[1];
   const { data: orgs }=useSWR(organizationsKey,OrganizationsAPI.findAll);
+  const { data: me }=useSWR(workspaceKey,DeliveryAPI.me);
   const { data: repositories }=useSWR(repositoriesKey,RepositoriesAPI.findAll);
   const { data: members }=useSWR(orgMembersKey,OrganizationMembersAPI.findAllWithUserInfo);
   const { data: repo }=useSWR(repoId? repositoryKey(repoId):null,() => RepositoriesAPI.findById(repoId!));
   const org=orgs?.[0];
-  const currentPage=repoId? repoTabs.find(t => t.segment===segment)?.label??"Repository":navigation.find(t => t.href===pathname)?.label??"Overview";
+  const currentPage=pathname?.startsWith("/dashboard/admin")? "Admin overview":repoId? repoTabs.find(t => t.segment===segment)?.label??"Repository":navigation.find(t => t.href===pathname)?.label??"Overview";
   const displayName=username||"Your workspace";
   const initials=displayName.slice(0,2).toUpperCase();
   const avatar=<span className="ws-avatar">{avatarUrl? <img src={avatarUrl} alt="" />:initials}</span>;
@@ -57,6 +59,10 @@ export default function DashboardShell({ username,avatarUrl,children }: { userna
             const count=item.icon==="repo"? repositories?.length:item.label==="People"? members?.length:undefined;
             return <Link key={item.href} href={item.href} aria-current={active? "page":undefined} onClick={() => setMenuOpen(false)}><WorkspaceIcon name={item.icon} /><span>{item.label}</span>{count!==undefined&&<small>{count}</small>}</Link>;
           })}
+          {me?.permissions.viewOrganizationOverview&&<Link href="/dashboard/admin" onClick={() => setMenuOpen(false)}><WorkspaceIcon name="health" /><span>Admin overview</span></Link>}
+          <p className="ws-nav-label">Tools</p>
+          <Link href="/dashboard/people" onClick={() => setMenuOpen(false)}><WorkspaceIcon name="people" /><span>People</span></Link>
+          {me?.permissions.viewOrganizationOverview&&<Link href="/dashboard/health" onClick={() => setMenuOpen(false)}><WorkspaceIcon name="health" /><span>Organization health</span></Link>}
           <p className="ws-nav-label ws-repo-label">Repository workspaces</p>
           {repositories?.slice(0,6).map(item => <Link key={item.id} href={`/dashboard/repositories/${item.id}/code`} onClick={() => setMenuOpen(false)} className={repoId===item.id? "ws-selected-repo":""}><span className="ws-dot" /><span className="truncate">{item.name}</span></Link>)}
           {repositories?.length===0&&<p className="ws-sidebar-empty">Synced repositories will appear here.</p>}
@@ -68,7 +74,7 @@ export default function DashboardShell({ username,avatarUrl,children }: { userna
       <div className="ws-body">
         <header className="ws-topbar">
           <button className="ws-menu ws-button" aria-label={menuOpen? "Close navigation":"Open navigation"} aria-expanded={menuOpen} aria-controls="workspace-navigation" onClick={() => setMenuOpen(!menuOpen)}><WorkspaceIcon name={menuOpen? "close":"menu"} /></button>
-          <div className="ws-context"><div><Link href="/dashboard">{org?.name??"Organization"}</Link><span>/</span><strong>{repoId? repo?.name??"Repository":currentPage}</strong></div><small>{repoId? currentPage:`Organization-wide view${repositories? ` across ${repositories.length} repositories`:""}`}</small></div>
+          <div className="ws-context"><div><Link href="/dashboard">{org?.name??"Organization"}</Link><span>/</span><strong>{repoId? repo?.name??"Repository":currentPage}</strong></div><small>{pathname==="/dashboard"? "Your team and followed repositories":repoId? currentPage:`Organization-wide view${repositories? ` across ${repositories.length} repositories`:""}`}</small></div>
           <div className="ws-top-actions"><ThemeSelect /><NotificationBell />{avatar}</div>
         </header>
         <main id="workspace-main" className="ws-main" tabIndex={-1}>

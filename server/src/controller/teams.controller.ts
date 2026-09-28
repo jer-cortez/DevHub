@@ -21,30 +21,6 @@ export const TeamsController = {
       res.status(500).json({ error: 'Failed to fetch team' });
     }
   },
-  async join(req: Request, res: Response) {
-    try {
-      const repoId = req.body?.repoId as string | undefined;
-      if (!repoId) {
-        res.status(400).json({ error: 'repoId is required' });
-        return;
-      }
-
-      const user = await resolveLocalUser(req);
-      // Upsert on user_id — joining a new repo replaces the previous
-      // membership rather than adding a second one.
-      const membership = await TeamsServices.join(user.id, repoId);
-      res.status(200).json({ data: membership });
-    } catch (error) {
-      res.status(500).json({ error: 'Failed to join team' });
-    }
-  },
-  async leave(req: Request, res: Response) {
-    try {
-      const user = await resolveLocalUser(req);
-      await TeamsServices.leave(user.id);
-      res.status(200).json({ data: null });
-    } catch (error) {
-      res.status(500).json({ error: 'Failed to leave team' });
-    }
-  },
+  async join(_req: Request, res: Response) { res.status(403).json({ error: 'Use managed team assignment' }); },
+  async leave(_req: Request, res: Response) { res.status(403).json({ error: 'Use managed team assignment' }); },
 };

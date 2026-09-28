@@ -30,6 +30,7 @@ vi.mock('../../config/prismaClient', () => ({
     organization_members: { findUnique: db.findMembership },
   },
 }));
+vi.mock('../emailAdmission.services', () => ({ admitConfirmedEmail: vi.fn() }));
 vi.mock('../../lib/github', () => ({
   octokit: { rest: {
     users: { getById: github.getById },
@@ -47,6 +48,7 @@ import {
   type VerifiedGithubIdentity,
 } from '../identity.services';
 import { AuthHandler } from '../auth.services';
+import { admitConfirmedEmail } from '../emailAdmission.services';
 
 function authUser(overrides: Partial<SupabaseUser> = {}): SupabaseUser {
   return {
@@ -177,6 +179,17 @@ describe('shared GitHub admission', () => {
     expect(db.findMembership).not.toHaveBeenCalled();
   });
 
+  it('routes email-only tokens through the shared admission without GitHub calls', async () => {
+    supabase.getUser.mockResolvedValue({ data: { user: authUser({ identities: [], email: 'person@example.org', email_confirmed_at: '2026-01-01T00:00:00Z' }) }, error: null });
+    vi.mocked(admitConfirmedEmail).mockResolvedValue({ localUser: { ...localUser, github_id: null }, email: 'person@example.org' });
+    const admitted = await AuthHandler.verifyAdmission('token');
+    expect(admitted.githubId).toBeNull();
+    expect(admitted.localUser.id).toBe(localUser.id);
+    expect(admitConfirmedEmail).toHaveBeenCalledWith(expect.objectContaining({ email: 'person@example.org' }), 'nonprofit-org');
+    expect(github.getById).not.toHaveBeenCalled();
+    expect(github.checkMembership).not.toHaveBeenCalled();
+  });
+
   it('rejects an explicitly inactive local organization membership', async () => {
     db.findOrganizations.mockResolvedValue([{ id: '40000000-0000-4000-8000-000000000001' }]);
     db.findMembership.mockResolvedValue({ status: 'inactive' });
@@ -207,6 +220,14 @@ describe('verified identity binding', () => {
       where: { id: localUser.id },
       data: expect.objectContaining({ auth_user_id: identity.authUserId, github_id: identity.githubId }),
     }));
+    expect(db.create).not.toHaveBeenCalled();
+  });
+
+  it('binds verified GitHub to an email-admitted user without changing its local ID', async () => {
+    const emailBound = { ...localUser, github_id: null, auth_user_id: identity.authUserId, email: 'verified@example.org' };
+    db.findUnique.mockResolvedValueOnce(emailBound).mockResolvedValueOnce(null);
+    db.update.mockResolvedValue({ ...emailBound, github_id: identity.githubId });
+    await expect(bindVerifiedGithubIdentity(identity)).resolves.toMatchObject({ id: emailBound.id, github_id: identity.githubId });
     expect(db.create).not.toHaveBeenCalled();
   });
 
